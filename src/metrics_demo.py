@@ -1,22 +1,45 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+from typing import Tuple
+import json
 
-time_per_document = 1.5
+time_per_document = 0.5
 cost_per_hour = 15
+
+with open("datasets.json", "r") as f:
+    datasets = json.load(f)
+
+
+def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
+    i_percentage = 100* datasets[dataset_type]["includes"] / datasets[dataset_type]["size"]
+    return (
+        datasets[dataset_type]["size"],
+        datasets[dataset_type]["includes"],
+        datasets[dataset_type]["excludes"],
+        i_percentage,
+    )
+
 
 st.title("Evaluation metrics for a fixed level of recall")
 
 # Sidebar
 st.sidebar.write("### Dataset parameters")
-dataset_type = st.sidebar.selectbox(label="Pick a dataset type", options=["Balanced", "Heavily Unbalanced"])
+dataset_type = st.sidebar.selectbox(
+    label="Pick a dataset type", options=datasets.keys()
+)
+_dataset_size, _i, _e, _i_percentage = get_dataset_parameters(dataset_type=dataset_type)
 
-dataset_size = st.sidebar.slider("Dataset size", 100, 5000, 1000, 50)
-i_percentage = st.sidebar.slider("Percentage of 'positive' documents (includes)", 1, 99, 10, 1)
+dataset_size = st.sidebar.slider("Dataset size", 100, 5000, _dataset_size, 50)
+i_percentage = st.sidebar.slider(
+    "Percentage of 'positive' documents (includes)", 1., 99., _i_percentage, 1.
+)
+
 
 i = int(dataset_size * i_percentage / 100)
 e = dataset_size - i
-st.sidebar.write("Includes: ", i, ". Excludes: ", e)
+st.sidebar.write("Number of relevant documents (includes): ", i)
+st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 st.sidebar.markdown("***")
 
 st.sidebar.write("### Expectation on recall")
@@ -52,9 +75,13 @@ FOR = 1 - NPV
 
 st.sidebar.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
 
-normalisedF1 = ((estimated_recall + 1)*i*TN) / (e*(estimated_recall*i + i + FP))
-normalisedF3 = ((estimated_recall + 9)*i*TN) / (e*(estimated_recall*i + 9*i + FP))
-normalisedF05 = ((estimated_recall + 0.25)*i*TN) / (e*(estimated_recall*i + 0.25*i + FP))
+normalisedF1 = ((estimated_recall + 1) * i * TN) / (e * (estimated_recall * i + i + FP))
+normalisedF3 = ((estimated_recall + 9) * i * TN) / (
+    e * (estimated_recall * i + 9 * i + FP)
+)
+normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
+    e * (estimated_recall * i + 0.25 * i + FP)
+)
 
 df = pd.DataFrame(
     {
@@ -103,28 +130,43 @@ options = st.multiselect(
 )
 columns = [x[1] for x in options]
 
-st.write(f"### Evaluation measure scores versus the number of True Negatives (TNs) for {100*estimated_recall:0.0f}% recall")
+st.write(
+    f"### Evaluation measure scores versus the number of True Negatives (TNs) for {100*estimated_recall:0.0f}% recall"
+)
 st.line_chart(df, x="TN", y=options)
 
+selected_tnr = st.slider("TNR", 0.0, 0.0, 1.0, 0.01)
+selected_fp = df[df["nWSS"].round() == selected_tnr]["FP"].values[0]
+selected_tn = df[df["nWSS"].round() == selected_tnr]["TN"].values[0]
+
+st.markdown(
+    f"| Screened |  |  | Number of |  \n\
+| ----------- | ----------- | ----------- | ----------- | \n\
+| Manually | {TP+selected_fp}  | TP | {TP} | \n\
+| | | FP | {selected_fp} | \n\
+| Automatically | {FN+selected_tn} | FN | {FN} | \n\
+| | | TN | {selected_tn} |"
+)
+st.markdown("")
 
 latex_code = r"""
 \begin{align}
-F &= FP + TN \\
-T &= TP + FN \\
-\text{TP@r\%} &= r \cdot T \\
-\text{FN@r\%} &= (1 - r) \cdot T \\
-WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) \\
-nWSS@r\% = TNR@r\% &= \frac{TN}{TN + FP} \\
-F_1@r\% &= \frac{2TP}{2TP + FP + FN} \\
-F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} \\
-F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} \\
-F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} \\ 
-normalisedF_1@r\% &= \frac{(r + 1) \cdot T \cdot TN}{F \cdot (r \cdot T+ T + FP)} \\
-normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot T \cdot TN}{F \cdot (r \cdot T+ \beta^2 \cdot T + FP)} \\ 
-PPV = Precision@r\% &= \frac{TP}{TP + FP} \\
-FDR@r\% &= \frac{FP}{TP + FP} \\
-NPV@r\% &= \frac{TN}{TN + FN} \\
-FOR@r\% &= \frac{FN}{TN + FN} \\
+F &= FP + TN \
+T &= TP + FN \
+\text{TP@r\%} &= r \cdot T \
+\text{FN@r\%} &= (1 - r) \cdot T \
+WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) \
+nWSS@r\% = TNR@r\% &= \frac{TN}{TN + FP} \
+F_1@r\% &= \frac{2TP}{2TP + FP + FN} \
+F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} \
+F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} \
+F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} \ 
+normalisedF_1@r\% &= \frac{(r + 1) \cdot T \cdot TN}{F \cdot (r \cdot T+ T + FP)} \
+normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot T \cdot TN}{F \cdot (r \cdot T+ \beta^2 \cdot T + FP)} \ 
+PPV = Precision@r\% &= \frac{TP}{TP + FP} \
+FDR@r\% &= \frac{FP}{TP + FP} \
+NPV@r\% &= \frac{TN}{TN + FN} \
+FOR@r\% &= \frac{FN}{TN + FN} \
 Accuracy &= \frac{TP + TN}{TP + TN + FP + FN} 
 \end{align}
 """
@@ -132,19 +174,35 @@ Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}
 with st.expander("See metrics definitions"):
     st.latex(latex_code)
 
-st.write("Time per document: ", time_per_document, "minutes, per user. ", 2, " assessments per document.")
+st.write(
+    "Time spent per document: ",
+    time_per_document,
+    "minutes, per user. ",
+    2,
+    " assessments per document.",
+)
 st.write("Cost per annotator: ", cost_per_hour, "€ per hour.")
 
-sampling_step = np.around(np.max(TN), decimals=-1)/10
+sampling_step = np.around(np.max(TN), decimals=-1) / 10
 sampled_df = df[df["TN"] % sampling_step == 0]
 sampled_df.reset_index(inplace=True, drop=True)
-sampled_df = sampled_df[["TN",  "FP", "FN", "TP", "WSS", "nWSS", "precision", "F3_score", "hours_saved", "cost_saved"]]
+sampled_df = sampled_df[
+    [
+        "TN",
+        "FP",
+        "FN",
+        "TP",
+        "WSS",
+        "nWSS",
+        "precision",
+        "F3_score",
+        "hours_saved",
+        "cost_saved",
+    ]
+]
 
 # pd.io.formats.style.Styler
-st.dataframe(sampled_df.style.hide(axis="index"),
-             height=422)
-
-
+st.dataframe(sampled_df.style.hide(axis="index"), height=422)
 
 
 # F1, F3 and work saved over sampling (WSS) for standard systematic reviews
