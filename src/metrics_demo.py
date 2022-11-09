@@ -1,3 +1,5 @@
+import copy
+
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -83,6 +85,16 @@ normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
     e * (estimated_recall * i + 0.25 * i + FP)
 )
 
+# reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
+reTNR = copy.deepcopy(nWSS)
+for _index_i in range(len(reTNR)-1, -1, -1):
+    if WSS[_index_i] > 0:
+        continue
+    else:
+        reTNR[_index_i] = reTNR[_index_i + 1]
+nreTNR = (reTNR - min(reTNR)) / (max(reTNR) - min(reTNR))
+
+
 df = pd.DataFrame(
     {
         "nWSS": nWSS,
@@ -105,6 +117,8 @@ df = pd.DataFrame(
         "normalisedF1": normalisedF1,
         "normalisedF3": normalisedF3,
         "normalisedF05": normalisedF05,
+        "reTNR": reTNR,
+        "nreTNR": nreTNR,
     }
 )
 
@@ -125,6 +139,8 @@ options = st.multiselect(
         "normalisedF1",
         "normalisedF3",
         "normalisedF05",
+        "reTNR",
+        "nreTNR",
     ),
     default=["nWSS", "WSS", "precision", "F05_score", "F3_score"],
 )
@@ -135,38 +151,39 @@ st.write(
 )
 st.line_chart(df, x="TN", y=options)
 
-selected_tnr = st.slider("TNR", 0.0, 0.0, 1.0, 0.01)
-selected_fp = df[df["nWSS"].round() == selected_tnr]["FP"].values[0]
-selected_tn = df[df["nWSS"].round() == selected_tnr]["TN"].values[0]
+step = max(df.loc[1, 'nWSS'] - df.loc[0, 'nWSS'], 0.005)
+selected_tnr = st.slider("Select your desired value of TNR (nWSS):", 0.0, 0.0, 1.0, step)
+selected_fp = df[(df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)]["FP"].values[0]
+selected_tn = df[(df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)]["TN"].values[0]
 
 st.markdown(
     f"| Screened |  |  | Number of |  \n\
 | ----------- | ----------- | ----------- | ----------- | \n\
-| Manually | {TP+selected_fp}  | TP | {TP} | \n\
-| | | FP | {selected_fp} | \n\
-| Automatically | {FN+selected_tn} | FN | {FN} | \n\
-| | | TN | {selected_tn} |"
+| Manually T | {TP+selected_fp}  | TP | {TP} | \n\
+| Manually F | | FP | {selected_fp} | \n\
+| Automatically T | {FN+selected_tn} | FN | {FN} | \n\
+| Automatically F | | TN | {selected_tn} |"
 )
 st.markdown("")
 
 latex_code = r"""
 \begin{align}
-F &= FP + TN \
-T &= TP + FN \
-\text{TP@r\%} &= r \cdot T \
-\text{FN@r\%} &= (1 - r) \cdot T \
-WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) \
-nWSS@r\% = TNR@r\% &= \frac{TN}{TN + FP} \
-F_1@r\% &= \frac{2TP}{2TP + FP + FN} \
-F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} \
-F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} \
-F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} \ 
-normalisedF_1@r\% &= \frac{(r + 1) \cdot T \cdot TN}{F \cdot (r \cdot T+ T + FP)} \
-normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot T \cdot TN}{F \cdot (r \cdot T+ \beta^2 \cdot T + FP)} \ 
-PPV = Precision@r\% &= \frac{TP}{TP + FP} \
-FDR@r\% &= \frac{FP}{TP + FP} \
-NPV@r\% &= \frac{TN}{TN + FN} \
-FOR@r\% &= \frac{FN}{TN + FN} \
+F &= FP + TN \\
+T &= TP + FN \\
+\text{TP@r\%} &= r \cdot T \\
+\text{FN@r\%} &= (1 - r) \cdot T \\
+WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) \\
+nWSS@r\% = TNR@r\% &= \frac{TN}{TN + FP} \\
+F_1@r\% &= \frac{2TP}{2TP + FP + FN} \\
+F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} \\
+F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} \\
+F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} \\ 
+normalisedF_1@r\% &= \frac{(r + 1) \cdot T \cdot TN}{F \cdot (r \cdot T+ T + FP)} \\
+normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot T \cdot TN}{F \cdot (r \cdot T+ \beta^2 \cdot T + FP)} \\ 
+PPV = Precision@r\% &= \frac{TP}{TP + FP} \\
+FDR@r\% &= \frac{FP}{TP + FP} \\
+NPV@r\% &= \frac{TN}{TN + FN} \\
+FOR@r\% &= \frac{FN}{TN + FN} \\
 Accuracy &= \frac{TP + TN}{TP + TN + FP + FN} 
 \end{align}
 """
