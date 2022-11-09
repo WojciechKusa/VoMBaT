@@ -1,18 +1,18 @@
 {
-  "Balanced dataset": {
-    "size": 1000,
-    "includes": 500,
-    "excludes": 500
-  },
   "Most excludes (typical SR)": {
-    "size": 1000,
-    "includes": 50,
-    "excludes": 950
+    "size": 2000,
+    "includes": 100,
+    "excludes": 1900
+  },
+  "Balanced dataset": {
+    "size": 2000,
+    "includes": 1000,
+    "excludes": 1000
   },
   "Most includes (very good query)": {
-    "size": 1000,
-    "includes": 950,
-    "excludes": 50
+    "size": 2000,
+    "includes": 1900,
+    "excludes": 100
   },
   "ACEInhibitors": {
     "size": 2544,
