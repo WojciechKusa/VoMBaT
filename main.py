@@ -6,8 +6,9 @@ import pandas as pd
 from typing import Tuple
 import json
 
-time_per_document = 0.5
-cost_per_hour = 15
+time_per_document = 0.5  # seconds
+cost_per_hour = 30
+assessments_per_document = 2
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -25,18 +26,16 @@ def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
     )
 
 
-st.title("Evaluation metrics for a fixed level of recall")
-
 # Sidebar
 st.sidebar.write("### Dataset parameters")
 dataset_type = st.sidebar.selectbox(
-    label="Pick a dataset type", options=datasets.keys()
+    label="Select a dataset type", options=datasets.keys()
 )
 _dataset_size, _i, _e, _i_percentage = get_dataset_parameters(dataset_type=dataset_type)
 
 dataset_size = st.sidebar.slider("Dataset size", 100, 5000, _dataset_size, 50)
 i_percentage = st.sidebar.slider(
-    "Percentage of 'positive' documents (includes)", 1.0, 99.0, _i_percentage, 1.0
+    "Percentage of relevant documents (includes)", 1.0, 99.0, _i_percentage, 1.0
 )
 
 
@@ -55,7 +54,7 @@ estimated_recall /= 100
 FN = int(i * (1 - estimated_recall))
 TP = i - FN
 
-TN = np.array(range(0, e + 1))
+TN = np.array(range(e + 1))
 FP = e - TN
 
 hours_saved = 2 * TN * time_per_document / 60
@@ -124,6 +123,7 @@ df = pd.DataFrame(
     }
 )
 
+st.title("Comparison of evaluation measures for a fixed level of recall")
 
 options = st.multiselect(
     "Select measures",
@@ -146,7 +146,7 @@ options = st.multiselect(
     ),
     default=["nWSS", "WSS", "precision", "F05_score", "F3_score"],
 )
-columns = [x[1] for x in options]
+columns = [x[1] for x in options]  # todo ????
 
 st.write(
     f"### Evaluation measure scores versus the number of True Negatives (TNs) for {100*estimated_recall:0.0f}% recall"
@@ -182,6 +182,8 @@ T &= TP + FN \\
 \text{FN@r\%} &= (1 - r) \cdot T \\
 WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) \\
 nWSS@r\% = TNR@r\% &= \frac{TN}{TN + FP} \\
+reTNR &= \max\left\{TNR@r\%, TNR@r\% + \epsilon\right\} \\
+nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} \\
 F_1@r\% &= \frac{2TP}{2TP + FP + FN} \\
 F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} \\
 F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} \\
@@ -196,14 +198,14 @@ Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}
 \end{align}
 """
 
-with st.expander("See metrics definitions"):
+with st.expander("Show measures' definitions"):
     st.latex(latex_code)
 
 st.write(
     "Time spent per document: ",
     time_per_document,
     "minutes, per user. ",
-    2,
+    assessments_per_document,
     " assessments per document.",
 )
 st.write("Cost per annotator: ", cost_per_hour, "€ per hour.")
@@ -217,10 +219,12 @@ sampled_df = sampled_df[
         "FP",
         "FN",
         "TP",
-        "WSS",
-        "nWSS",
-        "precision",
-        "F3_score",
+        # "WSS",
+        # "nWSS",
+        # "precision",
+        # "F3_score",
+    ] + options +
+    [
         "hours_saved",
         "cost_saved",
     ]
