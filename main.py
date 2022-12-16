@@ -9,12 +9,14 @@ import json
 time_per_document = 0.5
 cost_per_hour = 15
 
-with open("datasets.json", "r") as f:
+with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
 
 
 def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
-    i_percentage = 100* datasets[dataset_type]["includes"] / datasets[dataset_type]["size"]
+    i_percentage = (
+        100 * datasets[dataset_type]["includes"] / datasets[dataset_type]["size"]
+    )
     return (
         datasets[dataset_type]["size"],
         datasets[dataset_type]["includes"],
@@ -34,7 +36,7 @@ _dataset_size, _i, _e, _i_percentage = get_dataset_parameters(dataset_type=datas
 
 dataset_size = st.sidebar.slider("Dataset size", 100, 5000, _dataset_size, 50)
 i_percentage = st.sidebar.slider(
-    "Percentage of 'positive' documents (includes)", 1., 99., _i_percentage, 1.
+    "Percentage of 'positive' documents (includes)", 1.0, 99.0, _i_percentage, 1.0
 )
 
 
@@ -87,7 +89,7 @@ normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
 
 # reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
 reTNR = copy.deepcopy(nWSS)
-for _index_i in range(len(reTNR)-1, -1, -1):
+for _index_i in range(len(reTNR) - 1, -1, -1):
     if WSS[_index_i] > 0:
         continue
     else:
@@ -151,10 +153,16 @@ st.write(
 )
 st.line_chart(df, x="TN", y=options)
 
-step = max(df.loc[1, 'nWSS'] - df.loc[0, 'nWSS'], 0.005)
-selected_tnr = st.slider("Select your desired value of TNR (nWSS):", 0.0, 0.0, 1.0, step)
-selected_fp = df[(df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)]["FP"].values[0]
-selected_tn = df[(df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)]["TN"].values[0]
+step = max(df.loc[1, "nWSS"] - df.loc[0, "nWSS"], 0.005)
+selected_tnr = st.slider(
+    "Select your desired value of TNR (nWSS):", 0.0, 0.0, 1.0, step
+)
+selected_fp = df[
+    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)
+]["FP"].values[0]
+selected_tn = df[
+    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)
+]["TN"].values[0]
 
 st.markdown(
     f"| Screened |  |  | Number of |  \n\
