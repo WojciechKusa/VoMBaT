@@ -3,14 +3,9 @@ import copy
 import streamlit as st
 import numpy as np
 import pandas as pd
-from typing import Tuple
 import json
 
 from src.utils import get_dataset_parameters
-
-time_per_document = 0.5  # seconds
-cost_per_hour = 30
-assessments_per_document = 2
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -48,8 +43,8 @@ TP = i - FN
 TN = np.array(range(e + 1))
 FP = e - TN
 
-hours_saved = 2 * TN * time_per_document / 60
-cost_saved = hours_saved * cost_per_hour
+# hours_saved = 2 * TN * time_per_document / 60
+# cost_saved = hours_saved * cost_per_hour
 
 TPR = TP / i  # recall
 FPR = FP / e
@@ -104,8 +99,8 @@ df = pd.DataFrame(
         "NPV": NPV,
         "FOR": FOR,
         "accuracy": accuracy,
-        "hours_saved": hours_saved,
-        "cost_saved": cost_saved,
+        # "hours_saved": hours_saved,
+        # "cost_saved": cost_saved,
         "normalisedF1": normalisedF1,
         "normalisedF3": normalisedF3,
         "normalisedF05": normalisedF05,
