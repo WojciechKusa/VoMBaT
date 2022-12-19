@@ -35,14 +35,12 @@ e = dataset_size - i
 st.sidebar.write("Number of relevant documents (includes): ", i)
 st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
-st.write("### Manual / automatic assessments count")
+st.title("Estimation of time and money savings depending on evaluation measures values")
 
-st.write("""
-        This page displays the expected number of documents that would be screened manually 
-        and automatically, assuming one wants to achieve a specific recall level and the 
-        algorithm achieves some specific value of TNR.
-         """)
-estimated_recall = st.slider("Desired recall value: ", 1, 100, 95, 1)
+st.write("### Expectation on recall")
+estimated_recall = st.slider("Estimated recall", 1, 100, 95, 1)
+
+
 estimated_recall /= 100
 
 FN = int(i * (1 - estimated_recall))
@@ -59,7 +57,35 @@ FPR = FP / e
 
 nWSS = TN / e  # TNR
 WSS = (TN + FN) / dataset_size - (1 - estimated_recall)
+
+accuracy = (TP + TN) / dataset_size
 precision = TP / (TP + FP)
+F1_score = 2 * precision * TPR / (precision + TPR)
+F05_score = (1 + 0.5**2) * precision * TPR / (0.5**2 * precision + TPR)
+F3_score = 10 * precision * TPR / (9 * precision + TPR)
+FDR = 1 - precision
+
+NPV = TN / (TN + FN)
+FOR = 1 - NPV
+
+st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
+
+normalisedF1 = ((estimated_recall + 1) * i * TN) / (e * (estimated_recall * i + i + FP))
+normalisedF3 = ((estimated_recall + 9) * i * TN) / (
+    e * (estimated_recall * i + 9 * i + FP)
+)
+normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
+    e * (estimated_recall * i + 0.25 * i + FP)
+)
+
+# reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
+reTNR = copy.deepcopy(nWSS)
+for _index_i in range(len(reTNR) - 1, -1, -1):
+    if WSS[_index_i] > 0:
+        continue
+    else:
+        reTNR[_index_i] = reTNR[_index_i + 1]
+nreTNR = (reTNR - min(reTNR)) / (max(reTNR) - min(reTNR))
 
 
 df = pd.DataFrame(
@@ -72,44 +98,46 @@ df = pd.DataFrame(
         "FP": FP,
         "precision": precision,
         "recall": TPR,
+        "F1_score": F1_score,
+        "F05_score": F05_score,
+        "F3_score": F3_score,
+        "FDR": FDR,
+        "NPV": NPV,
+        "FOR": FOR,
+        "accuracy": accuracy,
+        "hours_saved": hours_saved,
+        "cost_saved": cost_saved,
+        "normalisedF1": normalisedF1,
+        "normalisedF3": normalisedF3,
+        "normalisedF05": normalisedF05,
+        "reTNR": reTNR,
+        "nreTNR": nreTNR,
     }
 )
-step = max(df.loc[1, "nWSS"] - df.loc[0, "nWSS"], 0.005)
-selected_tnr = st.slider(
-    "TNR (nWSS) score obtained by an algorithm: ", 0.0, 0.0, 1.0, step
+
+options = st.multiselect(
+    "Select measures",
+    (
+        "nWSS",
+        "WSS",
+        "precision",
+        "F1_score",
+        "F05_score",
+        "F3_score",
+        "FDR",
+        "NPV",
+        "FOR",
+        "accuracy",
+        "normalisedF1",
+        "normalisedF3",
+        "normalisedF05",
+        "reTNR",
+        "nreTNR",
+    ),
+    default=["nWSS", "WSS", "precision", "F05_score", "F3_score"],
 )
 
-st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2), "FPR: ", np.around(1-selected_tnr, decimals=2), "TNR: ", selected_tnr)
-
-
-selected_fp = df[
-    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.001)
-]["FP"].values[0]
-selected_tn = df[
-    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.001)
-]["TN"].values[0]
-
-st.markdown(
-    f"| Screened |  |  | Number of |  \n\
-| ----------- | ----------- | ----------- | ----------- | \n\
-| Manually T | {TP+selected_fp}  | TP | {TP} | \n\
-| Manually F | | FP | {selected_fp} | \n\
-| Automatically T | {FN+selected_tn} | FN | {FN} | \n\
-| Automatically F | | TN | {selected_tn} |"
-)
-st.markdown("")
-
-x =TP
-y =selected_fp
-z =FN
-w =selected_tn
-# draw two bar plots stacking x, y, z and w. And other when x+y and z+w are stacked
-st.bar_chart(pd.DataFrame({'Man. screened includes': [TP], 'Man. screened excludes': [selected_fp],
-                           'Autom. screened includes': [FN], 'Autom. screened excludes': [selected_tn]}))
-
-
-
-st.write("### Estimation of time and money savings depending on evaluation measures values.")
+# st.write("### Estimation of time and money savings depending on evaluation measures values.")
 st.write(
     "Time spent per document: ",
     time_per_document,
