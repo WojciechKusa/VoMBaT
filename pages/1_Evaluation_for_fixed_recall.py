@@ -16,7 +16,6 @@ with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
 
 
-
 # Sidebar
 st.sidebar.write("### Dataset parameters")
 dataset_type = st.sidebar.selectbox(

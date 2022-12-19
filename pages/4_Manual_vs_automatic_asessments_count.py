@@ -16,7 +16,6 @@ with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
 
 
-
 # Sidebar
 st.sidebar.write("### Dataset parameters")
 dataset_type = st.sidebar.selectbox(
@@ -37,11 +36,13 @@ st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
 st.write("### Manual / automatic assessments count")
 
-st.write("""
+st.write(
+    """
         This page displays the expected number of documents that would be screened manually 
         and automatically, assuming one wants to achieve a specific recall level and the 
         algorithm achieves some specific value of TNR.
-         """)
+         """
+)
 estimated_recall = st.slider("Desired recall value: ", 1, 100, 95, 1)
 estimated_recall /= 100
 
@@ -79,7 +80,16 @@ selected_tnr = st.slider(
     "TNR (nWSS) score obtained by an algorithm: ", 0.0, 0.0, 1.0, step
 )
 
-st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2), "FPR: ", np.around(1-selected_tnr, decimals=2), "TNR: ", selected_tnr)
+st.write(
+    "TPR: ",
+    TPR,
+    "FNR: ",
+    np.around(1 - TPR, decimals=2),
+    "FPR: ",
+    np.around(1 - selected_tnr, decimals=2),
+    "TNR: ",
+    selected_tnr,
+)
 
 
 selected_fp = df[
@@ -99,11 +109,18 @@ st.markdown(
 )
 st.markdown("")
 
-x =TP
-y =selected_fp
-z =FN
-w =selected_tn
+x = TP
+y = selected_fp
+z = FN
+w = selected_tn
 # draw two bar plots stacking x, y, z and w. And other when x+y and z+w are stacked
-st.bar_chart(pd.DataFrame({'Man. screened includes': [TP], 'Man. screened excludes': [selected_fp],
-                           'Autom. screened includes': [FN], 'Autom. screened excludes': [selected_tn]}))
-
+st.bar_chart(
+    pd.DataFrame(
+        {
+            "Man. screened includes": [TP],
+            "Man. screened excludes": [selected_fp],
+            "Autom. screened includes": [FN],
+            "Autom. screened excludes": [selected_tn],
+        }
+    )
+)

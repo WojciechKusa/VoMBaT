@@ -16,7 +16,6 @@ with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
 
 
-
 # Sidebar
 st.sidebar.write("### Dataset parameters")
 dataset_type = st.sidebar.selectbox(
@@ -156,8 +155,9 @@ sampled_df = sampled_df[
         "FP",
         "FN",
         "TP",
-    ] + options +
-    [
+    ]
+    + options
+    + [
         "hours_saved",
         "cost_saved",
     ]
@@ -165,4 +165,3 @@ sampled_df = sampled_df[
 
 # pd.io.formats.style.Styler
 st.dataframe(sampled_df.style.hide(axis="index"), height=422)
-

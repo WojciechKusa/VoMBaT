@@ -86,7 +86,10 @@ for recall in all_recalls:
                 "recall": recall,
                 "TN": TN,
                 "F1": 2 * precision * recall / (precision + recall),
-                "F05": (1 + 0.5**2) * precision * recall / (0.5**2 * precision + recall),
+                "F05": (1 + 0.5**2)
+                * precision
+                * recall
+                / (0.5**2 * precision + recall),
                 "F3": 10 * precision * recall / (9 * precision + recall),
                 "WSS": (TN + FN) / dataset_size - (1 - recall),
                 "TNR": TNR,
