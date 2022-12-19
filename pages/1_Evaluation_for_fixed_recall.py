@@ -6,6 +6,8 @@ import pandas as pd
 from typing import Tuple
 import json
 
+from src.utils import get_dataset_parameters
+
 time_per_document = 0.5  # seconds
 cost_per_hour = 30
 assessments_per_document = 2
@@ -13,17 +15,6 @@ assessments_per_document = 2
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
 
-
-def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
-    i_percentage = (
-        100 * datasets[dataset_type]["includes"] / datasets[dataset_type]["size"]
-    )
-    return (
-        datasets[dataset_type]["size"],
-        datasets[dataset_type]["includes"],
-        datasets[dataset_type]["excludes"],
-        i_percentage,
-    )
 
 
 # Sidebar
@@ -43,10 +34,11 @@ i = int(dataset_size * i_percentage / 100)
 e = dataset_size - i
 st.sidebar.write("Number of relevant documents (includes): ", i)
 st.sidebar.write("Number of non-relevant documents (excludes): ", e)
-st.sidebar.markdown("***")
 
-st.sidebar.write("### Expectation on recall")
-estimated_recall = st.sidebar.slider("Estimated recall", 1, 100, 95, 1)
+st.title("Comparison of evaluation measures for a fixed level of recall")
+
+st.write("### Expectation on recall")
+estimated_recall = st.slider("Estimated recall", 1, 100, 95, 1)
 
 
 estimated_recall /= 100
@@ -76,7 +68,7 @@ FDR = 1 - precision
 NPV = TN / (TN + FN)
 FOR = 1 - NPV
 
-st.sidebar.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
+st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
 
 normalisedF1 = ((estimated_recall + 1) * i * TN) / (e * (estimated_recall * i + i + FP))
 normalisedF3 = ((estimated_recall + 9) * i * TN) / (
@@ -123,8 +115,6 @@ df = pd.DataFrame(
     }
 )
 
-st.title("Comparison of evaluation measures for a fixed level of recall")
-
 options = st.multiselect(
     "Select measures",
     (
@@ -153,43 +143,23 @@ st.write(
 )
 st.line_chart(df, x="TN", y=options)
 
-step = max(df.loc[1, "nWSS"] - df.loc[0, "nWSS"], 0.005)
-selected_tnr = st.slider(
-    "Select your desired value of TNR (nWSS):", 0.0, 0.0, 1.0, step
-)
-selected_fp = df[
-    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)
-]["FP"].values[0]
-selected_tn = df[
-    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.01)
-]["TN"].values[0]
-
-st.markdown(
-    f"| Screened |  |  | Number of |  \n\
-| ----------- | ----------- | ----------- | ----------- | \n\
-| Manually T | {TP+selected_fp}  | TP | {TP} | \n\
-| Manually F | | FP | {selected_fp} | \n\
-| Automatically T | {FN+selected_tn} | FN | {FN} | \n\
-| Automatically F | | TN | {selected_tn} |"
-)
-st.markdown("")
 
 latex_code = r"""
 \begin{align}
-F &= FP + TN \\
-T &= TP + FN \\
-\text{TP@r\%} &= r \cdot T \\
-\text{FN@r\%} &= (1 - r) \cdot T \\
+\mathcal{E} &= FP + TN \\
+\mathcal{I} &= TP + FN \\
+\text{TP@r\%} &= r \cdot \mathcal{I} \\
+\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} \\
 WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) \\
 nWSS@r\% = TNR@r\% &= \frac{TN}{TN + FP} \\
-reTNR &= \max\left\{TNR@r\%, TNR@r\% + \epsilon\right\} \\
+reTNR@r\% &= \begin{cases} TNR@r\%, & \text{if } \frac{FP@r\%}{\mathcal{E}} < r\% \\ \frac{TN@r\%}{\mathcal{E}}, & \text{otherwise} \end{cases} \\
 nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} \\
 F_1@r\% &= \frac{2TP}{2TP + FP + FN} \\
 F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} \\
 F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} \\
 F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} \\ 
-normalisedF_1@r\% &= \frac{(r + 1) \cdot T \cdot TN}{F \cdot (r \cdot T+ T + FP)} \\
-normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot T \cdot TN}{F \cdot (r \cdot T+ \beta^2 \cdot T + FP)} \\ 
+normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} \\
+normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} \\ 
 PPV = Precision@r\% &= \frac{TP}{TP + FP} \\
 FDR@r\% &= \frac{FP}{TP + FP} \\
 NPV@r\% &= \frac{TN}{TN + FN} \\
@@ -200,38 +170,6 @@ Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}
 
 with st.expander("Show measures' definitions"):
     st.latex(latex_code)
-
-st.write(
-    "Time spent per document: ",
-    time_per_document,
-    "minutes, per user. ",
-    assessments_per_document,
-    " assessments per document.",
-)
-st.write("Cost per annotator: ", cost_per_hour, "€ per hour.")
-
-sampling_step = np.around(np.max(TN), decimals=-1) / 10
-sampled_df = df[df["TN"] % sampling_step == 0]
-sampled_df.reset_index(inplace=True, drop=True)
-sampled_df = sampled_df[
-    [
-        "TN",
-        "FP",
-        "FN",
-        "TP",
-        # "WSS",
-        # "nWSS",
-        # "precision",
-        # "F3_score",
-    ] + options +
-    [
-        "hours_saved",
-        "cost_saved",
-    ]
-]
-
-# pd.io.formats.style.Styler
-st.dataframe(sampled_df.style.hide(axis="index"), height=422)
 
 
 # F1, F3 and work saved over sampling (WSS) for standard systematic reviews

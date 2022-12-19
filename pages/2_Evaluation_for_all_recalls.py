@@ -6,25 +6,10 @@ import pandas as pd
 from typing import Tuple
 import json
 
-time_per_document = 0.5  # seconds
-cost_per_hour = 30
-assessments_per_document = 2
+from src.utils import get_dataset_parameters
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
-
-
-def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
-    i_percentage = (
-        100 * datasets[dataset_type]["includes"] / datasets[dataset_type]["size"]
-    )
-    return (
-        datasets[dataset_type]["size"],
-        datasets[dataset_type]["includes"],
-        datasets[dataset_type]["excludes"],
-        i_percentage,
-    )
-
 
 # Sidebar
 st.sidebar.write("### Dataset parameters")
@@ -43,85 +28,6 @@ i = int(dataset_size * i_percentage / 100)
 e = dataset_size - i
 st.sidebar.write("Number of relevant documents (includes): ", i)
 st.sidebar.write("Number of non-relevant documents (excludes): ", e)
-st.sidebar.markdown("***")
-
-st.sidebar.write("### Expectation on recall")
-estimated_recall = st.sidebar.slider("Estimated recall", 1, 100, 95, 1)
-
-
-estimated_recall /= 100
-
-FN = int(i * (1 - estimated_recall))
-TP = i - FN
-
-TN = np.array(range(e + 1))
-FP = e - TN
-
-hours_saved = 2 * TN * time_per_document / 60
-cost_saved = hours_saved * cost_per_hour
-
-TPR = TP / i  # recall
-FPR = FP / e
-
-nWSS = TN / e  # TNR
-WSS = (TN + FN) / dataset_size - (1 - estimated_recall)
-
-accuracy = (TP + TN) / dataset_size
-precision = TP / (TP + FP)
-F1_score = 2 * precision * TPR / (precision + TPR)
-F05_score = (1 + 0.5**2) * precision * TPR / (0.5**2 * precision + TPR)
-F3_score = 10 * precision * TPR / (9 * precision + TPR)
-FDR = 1 - precision
-
-NPV = TN / (TN + FN)
-FOR = 1 - NPV
-
-st.sidebar.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
-
-normalisedF1 = ((estimated_recall + 1) * i * TN) / (e * (estimated_recall * i + i + FP))
-normalisedF3 = ((estimated_recall + 9) * i * TN) / (
-    e * (estimated_recall * i + 9 * i + FP)
-)
-normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
-    e * (estimated_recall * i + 0.25 * i + FP)
-)
-
-# reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
-reTNR = copy.deepcopy(nWSS)
-for _index_i in range(len(reTNR) - 1, -1, -1):
-    if WSS[_index_i] > 0:
-        continue
-    else:
-        reTNR[_index_i] = reTNR[_index_i + 1]
-nreTNR = (reTNR - min(reTNR)) / (max(reTNR) - min(reTNR))
-
-
-df = pd.DataFrame(
-    {
-        "nWSS": nWSS,
-        "WSS": WSS,
-        "TN": TN,
-        "FN": FN,
-        "TP": TP,
-        "FP": FP,
-        "precision": precision,
-        "recall": TPR,
-        "F1_score": F1_score,
-        "F05_score": F05_score,
-        "F3_score": F3_score,
-        "FDR": FDR,
-        "NPV": NPV,
-        "FOR": FOR,
-        "accuracy": accuracy,
-        "hours_saved": hours_saved,
-        "cost_saved": cost_saved,
-        "normalisedF1": normalisedF1,
-        "normalisedF3": normalisedF3,
-        "normalisedF05": normalisedF05,
-        "reTNR": reTNR,
-        "nreTNR": nreTNR,
-    }
-)
 
 # describe the application and all pages:
 
@@ -153,6 +59,8 @@ columns = [x[1] for x in options]  # todo ????
 st.write(
     f"### Evaluation measure scores versus the number of True Negatives (TNs) for all possible levels of recall"
 )
+st.write("3D plot of F1, F0.5, WSS and TNR for different recall and TN levels")
+
 
 # 3D plot of F1, F3 and WSS for different recall and TN levels
 # X axis = recall
@@ -167,37 +75,19 @@ all_F1s = []
 all_F3s = []
 all_WSSs = []
 for recall in all_recalls:
+    TP = recall * i
+    FN = (1 - recall) * i
     for TN in all_TNs:
-        TP = recall * i
-        FN = (1 - recall) * i
-        precision = TP / (TP + TN)
-        TPR = TP / (TP + FN)
-        FP = TN * (1 - TPR)
-        TNR = TN / (TN + FP)
-        # df_3d = pd.concat(
-        #     [
-        #         df_3d,
-        #         pd.DataFrame(
-        #             {
-        #                 "recall": recall,
-        #                 "TN": TN,
-        #                 "F1": 2 * precision * TPR / (precision + TPR),
-        #                 "F3": 10 * precision * TPR / (9 * precision + TPR),
-        #                 "WSS": WSS,
-        #             },
-        #             index=[0],
-        #         ),
-        #     ],
-        #     ignore_index=True,
-        #     axis=0,
-        # )
+        FP = e - TN
+        precision = TP / (TP + FP)
+        TNR = TN / e
         df_3d = df_3d.append(
             {
                 "recall": recall,
                 "TN": TN,
-                "F1": 2 * precision * TPR / (precision + TPR),
-                "F05": (1 + 0.5**2) * precision * TPR / (0.5**2 * precision + TPR),
-                "F3": 10 * precision * TPR / (9 * precision + TPR),
+                "F1": 2 * precision * recall / (precision + recall),
+                "F05": (1 + 0.5**2) * precision * recall / (0.5**2 * precision + recall),
+                "F3": 10 * precision * recall / (9 * precision + recall),
                 "WSS": (TN + FN) / dataset_size - (1 - recall),
                 "TNR": TNR,
             },
@@ -206,13 +96,12 @@ for recall in all_recalls:
 
 # add streamlit new page
 
-st.write("### 3D plot of F1, F3, WSS and TNR for different recall and TN levels")
 fig = px.scatter_3d(
     df_3d,
     x="TN",
     y="recall",
     z="F1",
-    color="recall",
+    color="F1",
     opacity=0.7,
     width=800,
     height=600,
@@ -282,31 +171,3 @@ fig.update_layout(
     ),
 )
 st.plotly_chart(fig)
-
-
-
-# 2D plot of F1, F3 and WSS for different recall and TN levels
-# X axis = recall
-# Y axis = F1, F3 or WSS
-# Z axis = TN
-# fig = go.Figure()
-# for TN in np.linspace(0, e, 100):
-#     TP = recall * i
-#     FN = (1 - recall) * i
-#     precision = TP / (TP + TN)
-#     TPR = TP / (TP + FN)
-#     FP = TN * (1 - TPR)
-#     TNR = TN / (TN + FP)
-#     fig.add_trace(
-#         go.Scatter(
-#             x=all_recalls,
-#             y=2 * precision * TPR / (precision + TPR),
-#             mode="lines",
-#             name="TN = " + str(TN),
-#         )
-#     )
-# fig.update_layout(
-#     xaxis_title="recall",
-#     yaxis_title="F1",
-# )
-# st.plotly_chart(fig)
