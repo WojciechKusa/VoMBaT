@@ -3,10 +3,10 @@ import copy
 import streamlit as st
 import numpy as np
 import pandas as pd
-from typing import Tuple
 import json
+import plotly.express as px
 
-from src.utils import get_dataset_parameters
+from src.utils import get_dataset_parameters, measures_definition
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -49,8 +49,8 @@ options = st.multiselect(
         "normalisedF1",
         "normalisedF3",
         "normalisedF05",
-        # "reTNR",
-        # "nreTNR",
+        "reTNR",
+        "nreTNR",
     ),
     default=["TNR", "WSS", "F05", "F3"],
     max_selections=4,
@@ -58,23 +58,20 @@ options = st.multiselect(
 columns = [x[1] for x in options]  # todo ????
 
 st.write(
-    f"### Evaluation measure scores versus the number of True Negatives (TNs) for all possible levels of recall"
+    f"### Evaluation measure scores depending on the number of True Negatives (TNs) and estimated recall levels"
 )
-st.write("3D plot of evaluation measures for all recall and TN levels")
+st.write("This page presents 3D plots of possible evaluation measures scores for all recall and TN levels. "
+         "Select the measures you want to compare in the sidebar (up to four). "
+         "Each measure is plotted in a separate 3D plot. "
+         "The x-axis represents the number of TNs, the y-axis represents the estimated recall level, "
+         "and the z-axis represents the score of the selected measure. "
+         "You can see the definition of each measure below.")
 
-
-# 3D plot of F1, F3 and WSS for different recall and TN levels
-# X axis = recall
-# Y axis = TN
-# Z axis = F1, F3 or WSS
-import plotly.express as px
 
 df_3d = pd.DataFrame()
-all_recalls = np.linspace(0.1, 1, 30)
+all_recalls = np.linspace(0.01, 1, 30)
 all_TNs = np.linspace(0, e, 50)
-all_F1s = []
-all_F3s = []
-all_WSSs = []
+
 for recall in all_recalls:
     TP = recall * i
     FN = (1 - recall) * i
@@ -104,6 +101,15 @@ for recall in all_recalls:
         normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
                 e * (estimated_recall * i + 0.25 * i + FP)
         )
+        FNR = 1 - TPR
+        print(FP/e, recall)
+        if FP/e < recall:
+            reTNR = TNR
+        else:
+            reTNR = FNR
+
+        nreTNR = (reTNR - TN/e) / (1 - TN/e)
+        # nreTNR = (reTNR - min(reTNR)) / (max(reTNR) - min(reTNR))
 
         df_3d = df_3d.append(
             {
@@ -125,6 +131,8 @@ for recall in all_recalls:
                 "FDR": FDR,
                 "FOR": FOR,
                 "NPV": NPV,
+                "reTNR": reTNR,
+                "nreTNR": nreTNR,
             },
             ignore_index=True,
         )
@@ -148,3 +156,7 @@ for measure in options:
         ),
     )
     st.plotly_chart(fig)
+
+
+with st.expander("Show measures' definitions"):
+    st.latex(measures_definition)

@@ -36,8 +36,7 @@ st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
 st.title("Estimation of time and money savings depending on evaluation measures values")
 
-st.write("### Expectation on recall")
-estimated_recall = st.slider("Estimated recall", 1, 100, 95, 1)
+estimated_recall = st.slider("Estimated recall: ", 1, 100, 95, 1)
 
 
 estimated_recall /= 100
@@ -67,7 +66,7 @@ FDR = 1 - precision
 NPV = TN / (TN + FN)
 FOR = 1 - NPV
 
-st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
+# st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
 
 normalisedF1 = ((estimated_recall + 1) * i * TN) / (e * (estimated_recall * i + i + FP))
 normalisedF3 = ((estimated_recall + 9) * i * TN) / (

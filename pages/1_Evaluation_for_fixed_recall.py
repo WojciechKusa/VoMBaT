@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import json
 
-from src.utils import get_dataset_parameters
+from src.utils import get_dataset_parameters, measures_definition
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -30,11 +30,13 @@ st.sidebar.write("Number of relevant documents (includes): ", i)
 st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
 st.title("Comparison of evaluation measures for a fixed level of recall")
+st.write("Select a level of recall that you want to compare the measures for. "
+         "The level of recall is the percentage of relevant documents that are retrieved. "
+         "For example, if you select 10%, it assumes that the model retrieved correctly 10% of relevant documents. "
+         "The rest of the documents are assumed to be classified non-relevant. "
+         "You can see the definition of each measure below.")
 
-st.write("### Expectation on recall")
-estimated_recall = st.slider("Estimated recall", 1, 100, 95, 1)
-
-
+estimated_recall = st.slider("Estimated recall: ", 1, 100, 95, 1)
 estimated_recall /= 100
 
 FN = int(i * (1 - estimated_recall))
@@ -42,9 +44,6 @@ TP = i - FN
 
 TN = np.array(range(e + 1))
 FP = e - TN
-
-# hours_saved = 2 * TN * time_per_document / 60
-# cost_saved = hours_saved * cost_per_hour
 
 TPR = TP / i  # recall
 FPR = FP / e
@@ -99,8 +98,6 @@ df = pd.DataFrame(
         "NPV": NPV,
         "FOR": FOR,
         "accuracy": accuracy,
-        # "hours_saved": hours_saved,
-        # "cost_saved": cost_saved,
         "normalisedF1": normalisedF1,
         "normalisedF3": normalisedF3,
         "normalisedF05": normalisedF05,
@@ -110,7 +107,7 @@ df = pd.DataFrame(
 )
 
 options = st.multiselect(
-    "Select measures",
+    "Select measures: ",
     (
         "nWSS",
         "WSS",
@@ -138,32 +135,8 @@ st.write(
 st.line_chart(df, x="TN", y=options)
 
 
-latex_code = r"""
-\begin{align}
-\mathcal{E} &= FP + TN \\
-\mathcal{I} &= TP + FN \\
-\text{TP@r\%} &= r \cdot \mathcal{I} \\
-\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} \\
-WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) \\
-nWSS@r\% = TNR@r\% &= \frac{TN}{TN + FP} \\
-reTNR@r\% &= \begin{cases} TNR@r\%, & \text{if } \frac{FP@r\%}{\mathcal{E}} < r\% \\ \frac{TN@r\%}{\mathcal{E}}, & \text{otherwise} \end{cases} \\
-nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} \\
-F_1@r\% &= \frac{2TP}{2TP + FP + FN} \\
-F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} \\
-F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} \\
-F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} \\ 
-normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} \\
-normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} \\ 
-PPV = Precision@r\% &= \frac{TP}{TP + FP} \\
-FDR@r\% &= \frac{FP}{TP + FP} \\
-NPV@r\% &= \frac{TN}{TN + FN} \\
-FOR@r\% &= \frac{FN}{TN + FN} \\
-Accuracy &= \frac{TP + TN}{TP + TN + FP + FN} 
-\end{align}
-"""
-
 with st.expander("Show measures' definitions"):
-    st.latex(latex_code)
+    st.latex(measures_definition)
 
 
 # F1, F3 and work saved over sampling (WSS) for standard systematic reviews
