@@ -21,25 +21,25 @@ def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
 
 
 definitions = {
-    'E': r"\mathcal{E} &= FP + TN ",
-    'I': r"\mathcal{I} &= TP + FN ",
-    'TP': r"\text{TP@r\%} &= r \cdot \mathcal{I} ",
-    'FN': r"\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} ",
-    'WSS': r"WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) ",
-    'TNR': r"TNR@r\% = nWSS@r\% &= \frac{TN}{TN + FP} ",
-    'reTNR': r"reTNR@r\% &= \begin{cases} TNR@r\%, & \text{if } \frac{FP@r\%}{\mathcal{E}} < r\% \\ FNR@r\%, & \text{otherwise} \end{cases} ",
-    'nreTNR': r"nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} ",
-    'F1_score': r"F_1@r\% &= \frac{2TP}{2TP + FP + FN} ",
-    'F2_score': r"F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} ",
-    'F3_score': r"F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} ",
-    'F05_score': r"F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} ",
-    'normalisedF_1': r"normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} ",
-    'normalisedF_B': r"normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} ",
-    'PPV': r"PPV = Precision@r\% &= \frac{TP}{TP + FP} ",
-    'FDR': r"FDR@r\% &= \frac{FP}{TP + FP} ",
-    'NPV': r"NPV@r\% &= \frac{TN}{TN + FN} ",
-    'FOR': r"FOR@r\% &= \frac{FN}{TN + FN} ",
-    'Accuracy': r"Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}",
+    "E": r"\mathcal{E} &= FP + TN ",
+    "I": r"\mathcal{I} &= TP + FN ",
+    "TP": r"\text{TP@r\%} &= r \cdot \mathcal{I} ",
+    "FN": r"\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} ",
+    "WSS": r"WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) ",
+    "TNR": r"TNR@r\% = nWSS@r\% &= \frac{TN}{TN + FP} ",
+    "reTNR": r"reTNR@r\% &= \begin{cases} TNR@r\%, & \text{if } \frac{FP@r\%}{\mathcal{E}} < r\% \\ FNR@r\%, & \text{otherwise} \end{cases} ",
+    "nreTNR": r"nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} ",
+    "F1_score": r"F_1@r\% &= \frac{2TP}{2TP + FP + FN} ",
+    "F2_score": r"F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} ",
+    "F3_score": r"F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} ",
+    "F05_score": r"F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} ",
+    "normalisedF_1": r"normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} ",
+    "normalisedF_B": r"normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} ",
+    "PPV": r"PPV = Precision@r\% &= \frac{TP}{TP + FP} ",
+    "FDR": r"FDR@r\% &= \frac{FP}{TP + FP} ",
+    "NPV": r"NPV@r\% &= \frac{TN}{TN + FN} ",
+    "FOR": r"FOR@r\% &= \frac{FN}{TN + FN} ",
+    "Accuracy": r"Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}",
 }
 measures_definition = r"\begin{align}"
 for definition in definitions.values():
@@ -62,7 +62,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     accuracy = (TP + TN) / dataset_size
     precision = TP / (TP + FP)
     F1_score = 2 * precision * recall / (precision + recall)
-    F05_score = (1 + 0.5 ** 2) * precision * recall / (0.5 ** 2 * precision + recall)
+    F05_score = (1 + 0.5**2) * precision * recall / (0.5**2 * precision + recall)
     F3_score = 10 * precision * recall / (9 * precision + recall)
     FDR = 1 - precision
 
@@ -70,12 +70,8 @@ def calculate_metrics(i, e, recall, dataset_size):
     FOR = 1 - NPV
 
     normalisedF1 = ((recall + 1) * i * TN) / (e * (recall * i + i + FP))
-    normalisedF3 = ((recall + 9) * i * TN) / (
-        e * (recall * i + 9 * i + FP)
-    )
-    normalisedF05 = ((recall + 0.25) * i * TN) / (
-        e * (recall * i + 0.25 * i + FP)
-    )
+    normalisedF3 = ((recall + 9) * i * TN) / (e * (recall * i + 9 * i + FP))
+    normalisedF05 = ((recall + 0.25) * i * TN) / (e * (recall * i + 0.25 * i + FP))
 
     # reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
     reTNR = copy.deepcopy(TNR)

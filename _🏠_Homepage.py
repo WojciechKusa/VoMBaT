@@ -1,8 +1,6 @@
 import streamlit as st
 
-
 st.title("Comparison of evaluation measures for Technology-Assisted Reviews")
-
 
 st.write(
     """

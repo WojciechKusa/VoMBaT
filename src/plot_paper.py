@@ -1,9 +1,9 @@
 # plots used in the WSS paper
-import numpy as np
-import matplotlib.pyplot as plt
-import streamlit as st
 import json
-from typing import Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
+import streamlit as st
 
 from src.utils import get_dataset_parameters
 
@@ -12,9 +12,6 @@ cost_per_hour = 15
 
 with open("../data/datasets.json", "r") as f:
     datasets = json.load(f)
-
-
-
 
 st.title("Evaluation metrics for a fixed level of recall")
 
@@ -30,7 +27,6 @@ i_percentage = st.sidebar.slider(
     "Percentage of 'positive' documents (includes)", 1.0, 99.0, _i_percentage, 1.0
 )
 
-
 i = int(dataset_size * i_percentage / 100)
 e = dataset_size - i
 st.sidebar.write("Number of relevant documents (includes): ", i)
@@ -39,7 +35,6 @@ st.sidebar.markdown("***")
 
 st.sidebar.write("### Expectation on recall")
 estimated_recall = st.sidebar.slider("Estimated recall", 1, 100, 95, 1)
-
 
 estimated_recall /= 100
 
@@ -76,7 +71,6 @@ TPR_A[2] = 0.08
 TPR_A[3:] = [0.655 * (1.224**x) for x in TPR_A[3:]]
 TPR_A[990:] = [1 for x in TPR_A[990:]]
 
-
 print(TPR_A)
 # tpr which slowly rises linearly and then highly jumps to 0.95 at position 950
 TPR_B = [x / auc_dataset_size for x in list(range(auc_dataset_size))]
@@ -86,7 +80,6 @@ TPR_B[:_model_b_change_position] = [
 ]
 TPR_B[_model_b_change_position:] = [0.997 for x in TPR_B[_model_b_change_position:]]
 TPR_B[990:] = [1 for x in TPR_B[990:]]
-
 
 new_FPR = [x / auc_dataset_size for x in list(range(auc_dataset_size))]
 new_TNR = [1 - x for x in new_FPR]
@@ -131,7 +124,6 @@ plt.ylabel("True Positive Rate")
 plt.legend(loc="lower right")
 st.pyplot(fig)
 
-
 roc_auc_a = auc(new_TNR, TPR_A)
 roc_auc_b = auc(new_TNR, TPR_B)
 fig, ax = plt.subplots(figsize=(7, 4.5))
@@ -155,7 +147,6 @@ plt.ylim([0.0, 1.001])
 plt.xlim([0.0, 1.0])
 plt.legend(loc="lower right")
 st.pyplot(fig)
-
 
 # plt.style.use('ggplot')
 # plt.style.use('seaborn-dark-palette')

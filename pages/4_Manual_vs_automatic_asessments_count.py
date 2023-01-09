@@ -1,10 +1,8 @@
-import copy
+import json
 
-import streamlit as st
 import numpy as np
 import pandas as pd
-from typing import Tuple
-import json
+import streamlit as st
 
 from src.utils import get_dataset_parameters, calculate_metrics
 
@@ -15,14 +13,12 @@ assessments_per_document = 2
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
 
-
 # Sidebar
 st.sidebar.write("### Dataset parameters")
 
 emp = st.sidebar.empty()
 dataset_type = emp.selectbox(
-    label="Select a dataset type", options=datasets.keys(),
-    key='dataset_picker'
+    label="Select a dataset type", options=datasets.keys(), key="dataset_picker"
 )
 
 if dataset_type == "Custom":
@@ -31,24 +27,39 @@ if dataset_type == "Custom":
     _i = int(_dataset_size * _i_percentage / 100)
     _e = _dataset_size - _i
 else:
-    _dataset_size, _i, _e, _i_percentage = get_dataset_parameters(dataset_type=dataset_type)
+    _dataset_size, _i, _e, _i_percentage = get_dataset_parameters(
+        dataset_type=dataset_type
+    )
 
 
 def check_dataset_size():
     if _dataset_size != st.session_state.dataset_size:
-        st.session_state['dataset_picker'] = 'Custom'
+        st.session_state["dataset_picker"] = "Custom"
 
 
 def check_i_percentage():
     if _i_percentage != st.session_state.i_percentage:
-        st.session_state['dataset_picker'] = 'Custom'
+        st.session_state["dataset_picker"] = "Custom"
 
 
-dataset_size = st.sidebar.slider("Dataset size", 100, 5000, _dataset_size, 50, key='dataset_size', on_change=check_dataset_size)
-i_percentage = st.sidebar.slider(
-    "Percentage of relevant documents (includes)", 1.0, 99.0, _i_percentage, 1.0, key='i_percentage', on_change=check_i_percentage
+dataset_size = st.sidebar.slider(
+    "Dataset size",
+    100,
+    5000,
+    _dataset_size,
+    50,
+    key="dataset_size",
+    on_change=check_dataset_size,
 )
-
+i_percentage = st.sidebar.slider(
+    "Percentage of relevant documents (includes)",
+    1.0,
+    99.0,
+    _i_percentage,
+    1.0,
+    key="i_percentage",
+    on_change=check_i_percentage,
+)
 
 i = int(dataset_size * i_percentage / 100)
 e = dataset_size - i
@@ -70,12 +81,11 @@ estimated_recall /= 100
 FN = int(i * (1 - estimated_recall))
 TP = i - FN
 
-metrics = calculate_metrics(dataset_size=dataset_size, e=e, i=i, recall=estimated_recall)
-
-df = pd.DataFrame(
-    metrics
+metrics = calculate_metrics(
+    dataset_size=dataset_size, e=e, i=i, recall=estimated_recall
 )
 
+df = pd.DataFrame(metrics)
 
 step = max(df.loc[1, "TNR"] - df.loc[0, "TNR"], 0.005)
 selected_tnr = st.slider(
@@ -93,7 +103,6 @@ st.write(
     selected_tnr,
 )
 
-
 selected_fp = df[
     (df["TNR"] > selected_tnr - 0.002) & (df["TNR"] < selected_tnr + 0.001)
 ]["FP"].values[0]
@@ -104,9 +113,9 @@ selected_tn = df[
 st.markdown(
     f"| Screened |  |  | Number of |  \n\
 | ----------- | ----------- | ----------- | ----------- | \n\
-| Manually T | {TP+selected_fp}  | TP | {TP} | \n\
+| Manually T | {TP + selected_fp}  | TP | {TP} | \n\
 | Manually F | | FP | {selected_fp} | \n\
-| Automatically T | {FN+selected_tn} | FN | {FN} | \n\
+| Automatically T | {FN + selected_tn} | FN | {FN} | \n\
 | Automatically F | | TN | {selected_tn} |"
 )
 st.markdown("")
