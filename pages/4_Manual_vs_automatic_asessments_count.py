@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Tuple
 import json
 
-from src.utils import get_dataset_parameters
+from src.utils import get_dataset_parameters, calculate_metrics
 
 time_per_document = 0.5  # seconds
 cost_per_hour = 30
@@ -70,42 +70,23 @@ estimated_recall /= 100
 FN = int(i * (1 - estimated_recall))
 TP = i - FN
 
-TN = np.array(range(e + 1))
-FP = e - TN
-
-hours_saved = 2 * TN * time_per_document / 60
-cost_saved = hours_saved * cost_per_hour
-
-TPR = TP / i  # recall
-FPR = FP / e
-
-nWSS = TN / e  # TNR
-WSS = (TN + FN) / dataset_size - (1 - estimated_recall)
-precision = TP / (TP + FP)
-
+metrics = calculate_metrics(dataset_size=dataset_size, e=e, i=i, recall=estimated_recall)
 
 df = pd.DataFrame(
-    {
-        "nWSS": nWSS,
-        "WSS": WSS,
-        "TN": TN,
-        "FN": FN,
-        "TP": TP,
-        "FP": FP,
-        "precision": precision,
-        "recall": TPR,
-    }
+    metrics
 )
-step = max(df.loc[1, "nWSS"] - df.loc[0, "nWSS"], 0.005)
+
+
+step = max(df.loc[1, "TNR"] - df.loc[0, "TNR"], 0.005)
 selected_tnr = st.slider(
     "TNR (nWSS) score obtained by an algorithm: ", 0.0, 0.0, 1.0, step
 )
 
 st.write(
     "TPR: ",
-    TPR,
+    estimated_recall,
     "FNR: ",
-    np.around(1 - TPR, decimals=2),
+    np.around(1 - estimated_recall, decimals=2),
     "FPR: ",
     np.around(1 - selected_tnr, decimals=2),
     "TNR: ",
@@ -114,10 +95,10 @@ st.write(
 
 
 selected_fp = df[
-    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.001)
+    (df["TNR"] > selected_tnr - 0.002) & (df["TNR"] < selected_tnr + 0.001)
 ]["FP"].values[0]
 selected_tn = df[
-    (df["nWSS"] > selected_tnr - 0.002) & (df["nWSS"] < selected_tnr + 0.001)
+    (df["TNR"] > selected_tnr - 0.002) & (df["TNR"] < selected_tnr + 0.001)
 ]["TN"].values[0]
 
 st.markdown(

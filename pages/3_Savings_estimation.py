@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Tuple
 import json
 
-from src.utils import get_dataset_parameters
+from src.utils import get_dataset_parameters, calculate_metrics, defined_metrics
 
 time_per_document = 0.5  # seconds
 cost_per_hour = 30
@@ -62,98 +62,23 @@ estimated_recall = st.slider("Estimated recall: ", 1, 100, 95, 1)
 
 estimated_recall /= 100
 
-FN = int(i * (1 - estimated_recall))
-TP = i - FN
-
-TN = np.array(range(e + 1))
-FP = e - TN
-
-hours_saved = 2 * TN * time_per_document / 60
-cost_saved = hours_saved * cost_per_hour
-
-TPR = TP / i  # recall
-FPR = FP / e
-
-nWSS = TN / e  # TNR
-WSS = (TN + FN) / dataset_size - (1 - estimated_recall)
-
-accuracy = (TP + TN) / dataset_size
-precision = TP / (TP + FP)
-F1_score = 2 * precision * TPR / (precision + TPR)
-F05_score = (1 + 0.5**2) * precision * TPR / (0.5**2 * precision + TPR)
-F3_score = 10 * precision * TPR / (9 * precision + TPR)
-FDR = 1 - precision
-
-NPV = TN / (TN + FN)
-FOR = 1 - NPV
-
-# st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
-
-normalisedF1 = ((estimated_recall + 1) * i * TN) / (e * (estimated_recall * i + i + FP))
-normalisedF3 = ((estimated_recall + 9) * i * TN) / (
-    e * (estimated_recall * i + 9 * i + FP)
-)
-normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
-    e * (estimated_recall * i + 0.25 * i + FP)
-)
-
-# reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
-reTNR = copy.deepcopy(nWSS)
-for _index_i in range(len(reTNR) - 1, -1, -1):
-    if WSS[_index_i] > 0:
-        continue
-    else:
-        reTNR[_index_i] = reTNR[_index_i + 1]
-nreTNR = (reTNR - min(reTNR)) / (max(reTNR) - min(reTNR))
-
+metrics = calculate_metrics(dataset_size=dataset_size, e=e, i=i, recall=estimated_recall)
 
 df = pd.DataFrame(
-    {
-        "nWSS": nWSS,
-        "WSS": WSS,
-        "TN": TN,
-        "FN": FN,
-        "TP": TP,
-        "FP": FP,
-        "precision": precision,
-        "recall": TPR,
-        "F1_score": F1_score,
-        "F05_score": F05_score,
-        "F3_score": F3_score,
-        "FDR": FDR,
-        "NPV": NPV,
-        "FOR": FOR,
-        "accuracy": accuracy,
-        "hours_saved": hours_saved,
-        "cost_saved": cost_saved,
-        "normalisedF1": normalisedF1,
-        "normalisedF3": normalisedF3,
-        "normalisedF05": normalisedF05,
-        "reTNR": reTNR,
-        "nreTNR": nreTNR,
-    }
+    metrics
 )
+
+df["hours_saved"] = 2 * df['TN'] * time_per_document / 60
+df["cost_saved"] = df['hours_saved'] * cost_per_hour
+
+
 
 options = st.multiselect(
     "Select measures",
     (
-        "nWSS",
-        "WSS",
-        "precision",
-        "F1_score",
-        "F05_score",
-        "F3_score",
-        "FDR",
-        "NPV",
-        "FOR",
-        "accuracy",
-        "normalisedF1",
-        "normalisedF3",
-        "normalisedF05",
-        "reTNR",
-        "nreTNR",
+        defined_metrics
     ),
-    default=["nWSS", "WSS", "precision", "F05_score", "F3_score"],
+    default=["TNR", "WSS", "precision", "F05_score", "F3_score"],
 )
 
 # st.write("### Estimation of time and money savings depending on evaluation measures values.")
@@ -166,7 +91,7 @@ st.write(
 )
 st.write("Cost per annotator: ", cost_per_hour, "€ per hour.")
 
-sampling_step = np.around(np.max(TN), decimals=-1) / 10
+sampling_step = np.around(np.max(df['TN']), decimals=-1) / 10
 sampled_df = df[df["TN"] % sampling_step == 0]
 sampled_df.reset_index(inplace=True, drop=True)
 sampled_df = sampled_df[
