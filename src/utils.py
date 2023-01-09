@@ -1,5 +1,8 @@
+import copy
 import json
 from typing import Tuple
+
+import numpy as np
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -40,3 +43,106 @@ FOR@r\% &= \frac{FN}{TN + FN} \\
 Accuracy &= \frac{TP + TN}{TP + TN + FP + FN} 
 \end{align}
 """
+
+
+def _accuracy(TP, TN, dataset_size):
+    return (TP + TN) / dataset_size
+
+
+def _precision(TP, FP):
+    return TP / (TP + FP)
+
+
+def _npv(TN, FN):
+    return TN / (TN + FN)
+
+
+def calculate_metrics(i, e, recall, dataset_size):
+    metrics = {}
+    FN = int(i * (1 - recall))
+    TP = i - FN
+
+    TN = np.array(range(e + 1))
+    FP = e - TN
+
+    FPR = FP / e
+    nWSS = TN / e  # TNR
+    WSS = (TN + FN) / dataset_size - (1 - recall)
+
+    accuracy = (TP + TN) / dataset_size
+    precision = TP / (TP + FP)
+    F1_score = 2 * precision * recall / (precision + recall)
+    F05_score = (1 + 0.5 ** 2) * precision * recall / (0.5 ** 2 * precision + recall)
+    F3_score = 10 * precision * recall / (9 * precision + recall)
+    FDR = 1 - precision
+
+    NPV = TN / (TN + FN)
+    FOR = 1 - NPV
+
+    normalisedF1 = ((recall + 1) * i * TN) / (e * (recall * i + i + FP))
+    normalisedF3 = ((recall + 9) * i * TN) / (
+        e * (recall * i + 9 * i + FP)
+    )
+    normalisedF05 = ((recall + 0.25) * i * TN) / (
+        e * (recall * i + 0.25 * i + FP)
+    )
+
+    TNR = TN / e
+    FNR = FN / i
+
+    # if FP/e < recall:
+    #     reTNR = nWSS
+    # else:
+    #     reTNR = FNR
+
+    # reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
+    reTNR = copy.deepcopy(nWSS)
+    for _index_i in range(len(reTNR) - 1, -1, -1):
+        if WSS[_index_i] > 0:
+            continue
+        else:
+            reTNR[_index_i] = reTNR[_index_i + 1]
+    nreTNR = (reTNR - min(reTNR)) / (max(reTNR) - min(reTNR))
+
+    # return all variables as dict
+    metrics["TP"] = TP
+    metrics["TN"] = TN
+    metrics["FP"] = FP
+    metrics["FN"] = FN
+    metrics["FPR"] = FPR
+    metrics["nWSS"] = nWSS
+    metrics["WSS"] = WSS
+    metrics["accuracy"] = accuracy
+    metrics["precision"] = precision
+    metrics["F1_score"] = F1_score
+    metrics["F05_score"] = F05_score
+    metrics["F3_score"] = F3_score
+    metrics["FDR"] = FDR
+    metrics["NPV"] = NPV
+    metrics["FOR"] = FOR
+    metrics["normalisedF1"] = normalisedF1
+    metrics["normalisedF3"] = normalisedF3
+    metrics["normalisedF05"] = normalisedF05
+    metrics["reTNR"] = reTNR
+    metrics["nreTNR"] = nreTNR
+
+    return metrics
+
+
+defined_metrics = [
+    "nWSS",
+    "WSS",
+    "precision",
+    "F1_score",
+    "F05_score",
+    "F3_score",
+    "FDR",
+    "NPV",
+    "FOR",
+    "accuracy",
+    "normalisedF1",
+    "normalisedF3",
+    "normalisedF05",
+    "reTNR",
+    "nreTNR",
+]
