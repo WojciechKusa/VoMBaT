@@ -55,7 +55,7 @@ e = dataset_size - i
 st.sidebar.write("Number of relevant documents (includes): ", i)
 st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
-st.write("### Manual / automatic assessments count")
+st.title("Manual / automatic assessments count")
 
 st.write(
     """

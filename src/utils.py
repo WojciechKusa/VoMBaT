@@ -95,8 +95,8 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["FPR"] = FPR
     metrics["TNR"] = TNR
     metrics["WSS"] = WSS
-    metrics["accuracy"] = accuracy
-    metrics["precision"] = precision
+    metrics["Accuracy"] = accuracy
+    metrics["Precision"] = precision
     metrics["F1_score"] = F1_score
     metrics["F05_score"] = F05_score
     metrics["F3_score"] = F3_score
@@ -116,14 +116,14 @@ def calculate_metrics(i, e, recall, dataset_size):
 defined_metrics = [
     "TNR",
     "WSS",
-    "precision",
+    "Precision",
     "F1_score",
     "F05_score",
     "F3_score",
     "FDR",
     "NPV",
     "FOR",
-    "accuracy",
+    "Accuracy",
     "normalisedF1",
     "normalisedF3",
     "normalisedF05",

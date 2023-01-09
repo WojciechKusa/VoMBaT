@@ -111,6 +111,7 @@ for measure in options:
         ),
     )
     st.plotly_chart(fig)
+    st.markdown("----")
 
 
 with st.expander("Show measures' definitions"):
