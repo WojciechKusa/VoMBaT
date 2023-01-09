@@ -6,7 +6,7 @@ import pandas as pd
 import json
 import plotly.express as px
 
-from src.utils import get_dataset_parameters, measures_definition, calculate_metrics, defined_metrics
+from src.utils import get_dataset_parameters, measures_definition, calculate_metrics, defined_metrics, definitions
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -92,7 +92,7 @@ for recall in all_recalls:
     )
 
 for measure in options:
-    st.write("### ", measure)
+    st.latex(r"\begin{align*} " + "\n" + definitions[measure] + "\n" + r"\end{align*}")
     fig = px.scatter_3d(
         df_3d,
         x="TN",
