@@ -69,9 +69,16 @@ e = dataset_size - i
 st.sidebar.write("Number of relevant documents (includes): ", i)
 st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
-# describe the application and all pages:
-
 st.title("Comparison of evaluation measures for all levels of recall")
+
+st.write(
+    "This page presents 3D plots of possible evaluation measures scores for all recall and TN levels. "
+    "Select the measures you want to compare in the sidebar (up to four). "
+    "Each measure is plotted in a separate 3D plot. "
+    "The x-axis represents the number of TNs, the y-axis represents the estimated recall level, "
+    "and the z-axis represents the score of the selected measure. "
+    "You can see the definition of each measure below."
+)
 
 options = st.multiselect(
     "Select measures",
@@ -83,14 +90,6 @@ columns = [x[1] for x in options]  # todo ????
 
 st.write(
     f"### Evaluation measure scores depending on the number of True Negatives (TNs) and estimated recall levels"
-)
-st.write(
-    "This page presents 3D plots of possible evaluation measures scores for all recall and TN levels. "
-    "Select the measures you want to compare in the sidebar (up to four). "
-    "Each measure is plotted in a separate 3D plot. "
-    "The x-axis represents the number of TNs, the y-axis represents the estimated recall level, "
-    "and the z-axis represents the score of the selected measure. "
-    "You can see the definition of each measure below."
 )
 
 df_3d = pd.DataFrame()
