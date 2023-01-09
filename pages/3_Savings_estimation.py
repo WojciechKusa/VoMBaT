@@ -1,16 +1,9 @@
-import copy
-
 import streamlit as st
 import numpy as np
 import pandas as pd
-from typing import Tuple
 import json
 
 from src.utils import get_dataset_parameters, calculate_metrics, defined_metrics
-
-time_per_document = 0.5  # seconds
-cost_per_hour = 30
-assessments_per_document = 2
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -57,10 +50,15 @@ st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
 st.title("Estimation of time and money savings depending on evaluation measures values")
 
-estimated_recall = st.slider("Estimated recall: ", 1, 100, 95, 1)
-
-
+estimated_recall = st.slider("Required recall: ", 1, 100, 95, 1)
 estimated_recall /= 100
+
+
+cost_per_hour = st.number_input("Cost of manual annotator per hour [€]:", 10, 100, 30, 5)
+time_per_document = st.number_input("Average time spent per document per annotator in seconds:", 5, 180, 30, 5)
+assessments_per_document = st.number_input("Number of annotators assessing each document:", 1, 5, 2)
+
+hours_per_document = time_per_document / 60 / 60
 
 metrics = calculate_metrics(dataset_size=dataset_size, e=e, i=i, recall=estimated_recall)
 
@@ -68,10 +66,13 @@ df = pd.DataFrame(
     metrics
 )
 
-df["hours_saved"] = 2 * df['TN'] * time_per_document / 60
-df["cost_saved"] = df['hours_saved'] * cost_per_hour
+df["Hours saved"] = assessments_per_document * df['TN'] * hours_per_document
+df["Cost saved"] = df['Hours saved'] * cost_per_hour
 
 
+st.metric(label="Cost of manually annotating the whole dataset", value=f"{cost_per_hour * hours_per_document * assessments_per_document * dataset_size :.0f} €")
+
+st.markdown("---")
 
 options = st.multiselect(
     "Select measures",
@@ -79,17 +80,8 @@ options = st.multiselect(
         defined_metrics
     ),
     default=["TNR", "WSS", "precision", "F05_score", "F3_score"],
+    max_selections=6,
 )
-
-# st.write("### Estimation of time and money savings depending on evaluation measures values.")
-st.write(
-    "Time spent per document: ",
-    time_per_document,
-    "minutes, per user. ",
-    assessments_per_document,
-    " assessments per document.",
-)
-st.write("Cost per annotator: ", cost_per_hour, "€ per hour.")
 
 sampling_step = np.around(np.max(df['TN']), decimals=-1) / 10
 sampled_df = df[df["TN"] % sampling_step == 0]
@@ -103,10 +95,17 @@ sampled_df = sampled_df[
     ]
     + options
     + [
-        "hours_saved",
-        "cost_saved",
+        "Hours saved",
+        "Cost saved",
     ]
 ]
 
-# pd.io.formats.style.Styler
-st.dataframe(sampled_df.style.hide(axis="index"), height=422)
+hide_table_row_index = """
+            <style>
+            thead tr th:first-child {display:none}
+            tbody th {display:none}
+            </style>
+            """
+st.markdown(hide_table_row_index, unsafe_allow_html=True)
+
+st.table(sampled_df.style.format({"Hours saved": "{:.2f}", "Cost saved": "{:.0f}"}))
