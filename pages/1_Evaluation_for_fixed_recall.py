@@ -4,6 +4,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import json
+import plotly.express as px
 
 from src.utils import get_dataset_parameters, measures_definition, calculate_metrics, defined_metrics
 
@@ -62,7 +63,7 @@ estimated_recall /= 100
 
 
 metrics = calculate_metrics(dataset_size=dataset_size, e=e, i=i, recall=estimated_recall)
-st.write("TPR: ", str(estimated_recall), "FNR: ", np.around(1 - estimated_recall, decimals=2))
+st.write("TPR: ", estimated_recall, "FNR: ", np.around(1 - estimated_recall, decimals=2))
 
 
 df = pd.DataFrame(
@@ -74,25 +75,24 @@ options = st.multiselect(
     (
         defined_metrics
     ),
-    default=["TNR", "WSS", "precision", "F05_score", "F3_score"],
+    default=["TNR", "WSS", "Precision", "F05_score", "F3_score"],
 )
-columns = [x[1] for x in options]  # todo ????
 
 st.write(
     f"### Evaluation measure scores versus the number of True Negatives (TNs) for {100*estimated_recall:0.0f}% recall"
 )
-st.line_chart(df, x="TN", y=options)
+
+fig = px.line(df, x="TN", y=options,
+              width=800,
+              height=450,
+              )
+fig.update_layout(
+    xaxis_title=r'TN',
+    yaxis_title=r'Evaluation measure score',
+    legend_title_text='Measures',
+)
+st.plotly_chart(fig)
 
 
 with st.expander("Show measures' definitions"):
     st.latex(measures_definition)
-
-
-# F1, F3 and work saved over sampling (WSS) for standard systematic reviews
-# Precision, F0.5 and F1 when considering rapid reviews
-
-
-# print ROC curve
-# st.write("### Plot of TPR and FPR (ROC curve)")
-# df = pd.DataFrame({"TPR": TPR, "FPR": FPR})
-# st.line_chart(df, x="FPR", y="TPR")

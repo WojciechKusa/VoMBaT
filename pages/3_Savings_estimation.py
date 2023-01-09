@@ -79,7 +79,7 @@ options = st.multiselect(
     (
         defined_metrics
     ),
-    default=["TNR", "WSS", "precision", "F05_score", "F3_score"],
+    default=["TNR", "WSS", "Precision", "F05_score", "F3_score"],
     max_selections=6,
 )
 
