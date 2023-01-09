@@ -66,7 +66,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     FP = e - TN
 
     FPR = FP / e
-    nWSS = TN / e  # TNR
+    TNR = TN / e  # nWSS
     WSS = (TN + FN) / dataset_size - (1 - recall)
 
     accuracy = (TP + TN) / dataset_size
@@ -87,16 +87,9 @@ def calculate_metrics(i, e, recall, dataset_size):
         e * (recall * i + 0.25 * i + FP)
     )
 
-    TNR = TN / e
-    FNR = FN / i
-
-    # if FP/e < recall:
-    #     reTNR = nWSS
-    # else:
-    #     reTNR = FNR
-
     # reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
-    reTNR = copy.deepcopy(nWSS)
+    reTNR = copy.deepcopy(TNR)
+    print(len(reTNR) - 1, reTNR[len(reTNR) - 1], WSS[len(reTNR) - 1])
     for _index_i in range(len(reTNR) - 1, -1, -1):
         if WSS[_index_i] > 0:
             continue
@@ -110,7 +103,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["FP"] = FP
     metrics["FN"] = FN
     metrics["FPR"] = FPR
-    metrics["nWSS"] = nWSS
+    metrics["TNR"] = TNR
     metrics["WSS"] = WSS
     metrics["accuracy"] = accuracy
     metrics["precision"] = precision
@@ -125,12 +118,13 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["normalisedF05"] = normalisedF05
     metrics["reTNR"] = reTNR
     metrics["nreTNR"] = nreTNR
+    metrics["recall"] = recall
 
     return metrics
 
 
 defined_metrics = [
-    "nWSS",
+    "TNR",
     "WSS",
     "precision",
     "F1_score",
