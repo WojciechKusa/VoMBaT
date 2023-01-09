@@ -3,6 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 
 from src.utils import get_dataset_parameters, calculate_metrics
 
@@ -69,11 +70,20 @@ st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 st.title("Manual / automatic assessments count")
 
 st.write(
-    """
+    """       
+        When one fixes the recall level, the number of relevant documents (includes) that would be screened 
+        manually and automatically is fixed. 
+        Relevant documents included automatically are equal to TP, whereas includes left for a manual review are equal 
+        to FN. 
+        The number of irrelevant documents (excludes) that would be screened manually and automatically depends on the
+        models quality (TNR). 
+        The higher the TNR score, the more irrelevant documents are excluded automatically (TN). 
+        The remaining irrelevant documents need to be reviewed manually (FP).
+         
         This page displays the expected number of documents that would be screened manually 
-        and automatically, assuming one wants to achieve a specific recall level and the 
-        algorithm achieves some specific value of TNR.
-         """
+        and automatically, assuming one wants to achieve a specific recall level.
+        Values are presented as stacked barplots for eleven different values of TNR.
+    """
 )
 estimated_recall = st.slider("Desired recall value: ", 1, 100, 95, 1)
 estimated_recall /= 100
@@ -87,51 +97,48 @@ metrics = calculate_metrics(
 
 df = pd.DataFrame(metrics)
 
-step = max(df.loc[1, "TNR"] - df.loc[0, "TNR"], 0.005)
-selected_tnr = st.slider(
-    "TNR (nWSS) score obtained by an algorithm: ", 0.0, 0.0, 1.0, step
-)
 
-st.write(
-    "TPR: ",
-    estimated_recall,
-    "FNR: ",
-    np.around(1 - estimated_recall, decimals=2),
-    "FPR: ",
-    np.around(1 - selected_tnr, decimals=2),
-    "TNR: ",
-    selected_tnr,
-)
+out_df = pd.DataFrame()
+for selected_tnr in range(0, 101, 10):
+    selected_tnr /= 100.0
 
-selected_fp = df[
-    (df["TNR"] > selected_tnr - 0.002) & (df["TNR"] < selected_tnr + 0.001)
-]["FP"].values[0]
-selected_tn = df[
-    (df["TNR"] > selected_tnr - 0.002) & (df["TNR"] < selected_tnr + 0.001)
-]["TN"].values[0]
+    selected_fp = df[
+        (df["TNR"] > selected_tnr - 0.002) & (df["TNR"] < selected_tnr + 0.002)
+    ]["FP"].values[0]
+    selected_tn = df[
+        (df["TNR"] > selected_tnr - 0.002) & (df["TNR"] < selected_tnr + 0.002)
+    ]["TN"].values[0]
 
-st.markdown(
-    f"| Screened |  |  | Number of |  \n\
-| ----------- | ----------- | ----------- | ----------- | \n\
-| Manually T | {TP + selected_fp}  | TP | {TP} | \n\
-| Manually F | | FP | {selected_fp} | \n\
-| Automatically T | {FN + selected_tn} | FN | {FN} | \n\
-| Automatically F | | TN | {selected_tn} |"
-)
-st.markdown("")
+    values_dict = {
+        "Includes left for manual review": FN,
+        "Automatically included": TP,
+        "Excludes left for manual review": selected_fp,
+        "Automatically excluded": selected_tn,
+    }
 
-x = TP
-y = selected_fp
-z = FN
-w = selected_tn
-# draw two bar plots stacking x, y, z and w. And other when x+y and z+w are stacked
-st.bar_chart(
-    pd.DataFrame(
-        {
-            "Man. screened includes": [TP],
-            "Man. screened excludes": [selected_fp],
-            "Autom. screened includes": [FN],
-            "Autom. screened excludes": [selected_tn],
-        }
-    )
+    for key, value in values_dict.items():
+        out_df = out_df.append(
+            {
+                "type": key,
+                "count": value,
+                "TNR": selected_tnr,
+            },
+            ignore_index=True,
+        )
+
+
+fig = px.bar(
+    out_df,
+    x="TNR",
+    y="count",
+    color="type",
+    color_discrete_sequence=px.colors.qualitative.D3,
 )
+fig.update_layout(
+    xaxis_title=r"TNR",
+    yaxis_title=r"Document count",
+    legend_title_text="Type of documents",
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    xaxis=dict(tickmode="array", tickvals=out_df["TNR"].unique()),
+)
+st.plotly_chart(fig)
