@@ -6,7 +6,7 @@ import pandas as pd
 import json
 import plotly.express as px
 
-from src.utils import get_dataset_parameters, measures_definition
+from src.utils import get_dataset_parameters, measures_definition, calculate_metrics, defined_metrics
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
@@ -57,23 +57,9 @@ st.title("Comparison of evaluation measures for all levels of recall")
 options = st.multiselect(
     "Select measures",
     (
-        "TNR",
-        "WSS",
-        "precision",
-        "F1",
-        "F05",
-        "F3",
-        "FDR",
-        "NPV",
-        "FOR",
-        "accuracy",
-        "normalisedF1",
-        "normalisedF3",
-        "normalisedF05",
-        "reTNR",
-        "nreTNR",
+defined_metrics
     ),
-    default=["TNR", "WSS", "F05", "F3"],
+    default=["TNR", "WSS", "F05_score", "F3_score"],
     max_selections=4,
 )
 columns = [x[1] for x in options]  # todo ????
@@ -96,69 +82,17 @@ all_TNs = np.linspace(0, e, 50)
 for recall in all_recalls:
     TP = recall * i
     FN = (1 - recall) * i
-    for TN in all_TNs:
-        FP = e - TN
-        precision = TP / (TP + FP)
-        TNR = TN / e
-        TPR = recall
-        estimated_recall = recall/100
+    metrics = calculate_metrics(dataset_size=dataset_size, e=e, i=i, recall=recall)
 
-        accuracy = (TP + TN) / dataset_size
-        # precision = TP / (TP + FP)
-        F1_score = 2 * precision * TPR / (precision + TPR)
-        F05_score = (1 + 0.5 ** 2) * precision * TPR / (0.5 ** 2 * precision + TPR)
-        F3_score = 10 * precision * TPR / (9 * precision + TPR)
-        FDR = 1 - precision
-
-        NPV = TN / (TN + FN)
-        FOR = 1 - NPV
-
-        # st.write("TPR: ", TPR, "FNR: ", np.around(1 - TPR, decimals=2))
-
-        normalisedF1 = ((estimated_recall + 1) * i * TN) / (e * (estimated_recall * i + i + FP))
-        normalisedF3 = ((estimated_recall + 9) * i * TN) / (
-                e * (estimated_recall * i + 9 * i + FP)
-        )
-        normalisedF05 = ((estimated_recall + 0.25) * i * TN) / (
-                e * (estimated_recall * i + 0.25 * i + FP)
-        )
-        FNR = 1 - TPR
-        print(FP/e, recall)
-        if FP/e < recall:
-            reTNR = TNR
-        else:
-            reTNR = FNR
-
-        nreTNR = (reTNR - TN/e) / (1 - TN/e)
-        # nreTNR = (reTNR - min(reTNR)) / (max(reTNR) - min(reTNR))
-
-        df_3d = df_3d.append(
-            {
-                "recall": recall,
-                "TN": TN,
-                "F1": 2 * precision * recall / (precision + recall),
-                "F05": (1 + 0.5**2)
-                * precision
-                * recall
-                / (0.5**2 * precision + recall),
-                "F3": 10 * precision * recall / (9 * precision + recall),
-                "WSS": (TN + FN) / dataset_size - (1 - recall),
-                "TNR": TNR,
-                "normalisedF1": normalisedF1,
-                "normalisedF3": normalisedF3,
-                "normalisedF05": normalisedF05,
-                "precision": precision,
-                "accuracy": accuracy,
-                "FDR": FDR,
-                "FOR": FOR,
-                "NPV": NPV,
-                "reTNR": reTNR,
-                "nreTNR": nreTNR,
-            },
-            ignore_index=True,
-        )
+    df_3d = df_3d.append(
+        pd.DataFrame(
+            metrics
+        ),
+        ignore_index=True,
+    )
 
 for measure in options:
+    st.write("### ", measure)
     fig = px.scatter_3d(
         df_3d,
         x="TN",
