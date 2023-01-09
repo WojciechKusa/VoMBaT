@@ -64,6 +64,22 @@ st.sidebar.write("Number of non-relevant documents (excludes): ", e)
 
 st.title("Estimation of time and money savings depending on evaluation measures values")
 
+st.write(
+    "This page presents the time and money savings that can be achieved depending on the value of evaluation measures. "
+    "The goal is to determine the minimum value of the evaluation measures that can be accepted in order to reduce the "
+    "manual screening time and the cost of the evaluation. "
+    "Average time spent per document, number of manual assessments per document and cost of manual annotators can be "
+    "adjusted using the sliders below. "
+    "The dataset size, the percentage of relevant documents and the minimum satisfiable recall can also be set."
+)
+
+st.write(
+    "When screening the dataset manually, every document needs to be assessed. "
+    "Savings can come when the automatic assessment is good enough to avoid manual assessment of some documents. "
+    "This is equal to removing True Negatives (TN). "
+    "Depending on how many TNs the model can discard, the higher the savings are."
+)
+
 estimated_recall = st.slider("Required recall: ", 1, 100, 95, 1)
 estimated_recall /= 100
 
