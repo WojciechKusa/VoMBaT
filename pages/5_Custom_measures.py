@@ -116,9 +116,44 @@ def replace_rpn_tokens_with_numbers(rpn: list[str], token_dict: dict) -> list:
             if token in {"+", "-", "*", "/"}:
                 out_rpn.append(token)
             else:
-                out_rpn.append(token_dict.get(token, 0))
+                out_rpn.append(token_dict[token.lower()])
 
     return out_rpn
+
+
+def rpn_to_latex(tokens: list):
+    # Create a stack to store operands
+    stack = []
+
+    # Iterate through the tokens
+    for token in tokens:
+        if token in ["+", "-", "*", "/", "^"]:
+            if token == "+":
+                operand2 = stack.pop()
+                operand1 = stack.pop()
+                result = f"{operand1} + {operand2}"
+            elif token == "-":
+                operand2 = stack.pop()
+                operand1 = stack.pop()
+                result = f"{operand1} - {operand2}"
+            elif token == "*":
+                operand2 = stack.pop()
+                operand1 = stack.pop()
+                result = f"{operand1} \cdot {operand2}"
+            elif token == "/":
+                operand2 = stack.pop()
+                operand1 = stack.pop()
+                result = f"\\frac{{{operand1}}}{{{operand2}}}"
+            elif token == "^":
+                operand2 = stack.pop()
+                operand1 = stack.pop()
+                result = f"{operand1} ^ {operand2}"
+            # Push the result onto the stack
+            stack.append(result)
+        else:
+            stack.append(token)
+
+    return stack[0]
 
 
 with open("data/datasets.json", "r") as f:
@@ -184,8 +219,9 @@ st.write(
     "This page allows you to create your own evaluation measures. "
     "Create the equation using the confusion matrix terms."
     "Currently, the following operators are supported: `+`, `-`, `*`, `/` and parenthesis. "
-    "The following variables are predefined (case sensitive): "
-    "`TN`, `TP`, `FP`, `FN`, `i`, `e`, `N`, `recall`, `precision`, `accuracy`."
+    "The following variables are predefined (case insensitive): "
+    "`TN`, `TP`, `FP`, `FN`, `I` (total number of relevant documents), `E` (total number of irrelevant documents), "
+    "`N` (total number of documents), `recall`, `precision`, `accuracy`."
 )
 
 input_equation = st.empty()
@@ -193,10 +229,10 @@ equation_string = input_equation.text_input(
     "Type your equation here and press Enter", value="(5*TP + TN)/N"
 )
 
-col1, col2 = st.columns(2)
+col1, col2, col3, col4 = st.columns(4)
 
-if wss_button := col1.button("WSS"):
-    equation_string = "(TN + FN)/N - (1 - recall)"
+if wss_button := col1.button("Work Saved over Sampling"):
+    equation_string = "(TN + FN)/N - 1 + recall"
     input_equation.text_input(
         "Type your equation here and press Enter", value=equation_string
     )
@@ -207,6 +243,21 @@ if f1_button := col2.button("F1 score"):
         "Type your equation here and press Enter", value=equation_string
     )
 
+if nlr_button := col3.button("Negative likelihood ratio"):
+    equation_string = "(FN * E)/(TN * I)"
+    input_equation.text_input(
+        "Type your equation here and press Enter", value=equation_string
+    )
+
+if mk_button := col4.button("Markedness"):
+    equation_string = "((TP/(TP+FP) + TN/(FN+TN)) - 1)"
+    input_equation.text_input(
+        "Type your equation here and press Enter", value=equation_string
+    )
+
+rpn = to_rpn(equation_string)
+latex_formula = rpn_to_latex(rpn)
+st.latex(latex_formula)
 
 df_3d = pd.DataFrame()
 all_recalls = np.linspace(0.01, 1, 25)
@@ -222,21 +273,20 @@ for recall in all_recalls:
         FP = e - tn_score
 
         token_dict = {
-            "TP": TP,
-            "FN": FN,
-            "TN": tn_score,
-            "FP": FP,
+            "tp": TP,
+            "fn": FN,
+            "tn": tn_score,
+            "fp": FP,
             "i": i,
             "e": e,
-            "N": dataset_size,
+            "n": dataset_size,
             "recall": recall,
             "precision": TP / (TP + FP),
             "accuracy": (TP + tn_score) / dataset_size,
         }
 
-        rpn = to_rpn(equation_string)
-        rpn = replace_rpn_tokens_with_numbers(rpn, token_dict=token_dict)
-        score = evaluate_rpn(tokens=rpn)
+        substituted_rpn = replace_rpn_tokens_with_numbers(rpn, token_dict=token_dict)
+        score = evaluate_rpn(tokens=substituted_rpn)
 
         token_dict["measure"] = score
 
@@ -248,7 +298,7 @@ for recall in all_recalls:
 
 fig = px.scatter_3d(
     df_3d,
-    x="TN",
+    x="tn",
     y="recall",
     z="measure",
     color="measure",
