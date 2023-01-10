@@ -94,7 +94,6 @@ st.write(
 
 df_3d = pd.DataFrame()
 all_recalls = np.linspace(0.01, 1, 30)
-all_TNs = np.linspace(0, e, 50)
 
 for recall in all_recalls:
     TP = recall * i

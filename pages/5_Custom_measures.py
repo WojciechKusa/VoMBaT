@@ -28,12 +28,8 @@ def to_rpn(expression):
     current_token = ""
 
     for x in expression:
-        # if x not in operators_precedence and x not in ["(", ")"] and not " ":  # Is number
-        # if c.isalnum():
-        #     If the character is alphanumeric, add it to the current token
         if x.isalnum():
             current_token += x
-            # output_queue.append(x)
             continue
         else:
             if current_token:
@@ -86,8 +82,6 @@ def evaluate_rpn(tokens):
             # If the token is a number, push it onto the stack
             stack.append(token)
         elif token in ["+", "-", "*", "/"]:
-            # If the token is an operator, pop the required operands from the stack
-            # and perform the operation
             if token == "+":
                 operand2 = stack.pop()
                 operand1 = stack.pop()
@@ -119,7 +113,7 @@ def replace_rpn_tokens_with_numbers(rpn: list[str], token_dict: dict) -> list:
             token = float(token)
             out_rpn.append(token)
         except ValueError:
-            if token in ["+", "-", "*", "/"]:
+            if token in {"+", "-", "*", "/"}:
                 out_rpn.append(token)
             else:
                 out_rpn.append(token_dict.get(token, 0))
@@ -182,8 +176,6 @@ i = int(dataset_size * i_percentage / 100)
 e = dataset_size - i
 st.sidebar.write("Number of relevant documents (includes): ", i)
 st.sidebar.write("Number of non-relevant documents (excludes): ", e)
-# add an input field so user can type their own evaluation measure
-# add a dropdown menu so user can select from a list of evaluation measures
 
 
 st.title("Custom evaluation measures")
@@ -192,13 +184,13 @@ st.write(
     "This page allows you to create your own evaluation measures. "
     "Create the equation using the confusion matrix terms."
     "Currently, the following operators are supported: `+`, `-`, `*`, `/` and parenthesis. "
-    "The following variables are supported (case sensitive): "
+    "The following variables are predefined (case sensitive): "
     "`TN`, `TP`, `FP`, `FN`, `i`, `e`, `N`, `recall`, `precision`, `accuracy`."
 )
 
 input_equation = st.empty()
 equation_string = input_equation.text_input(
-    "Type your equation here and press Enter", value="(TP + TN)/N"
+    "Type your equation here and press Enter", value="(5*TP + TN)/N"
 )
 
 col1, col2 = st.columns(2)
@@ -216,59 +208,59 @@ if f1_button := col2.button("F1 score"):
     )
 
 
-recall = st.slider("Estimated recall: ", 1, 100, 95, 1)
-recall /= 100
+df_3d = pd.DataFrame()
+all_recalls = np.linspace(0.01, 1, 25)
 
-# for recall in all_recalls:
-TP = recall * i
-FN = (1 - recall) * i
+for recall in all_recalls:
+    TP = recall * i
+    FN = (1 - recall) * i
+
+    TN = np.linspace(1, e, 80)
+    df = pd.DataFrame()
+    for tn_score in TN:
+        tn_score = int(tn_score)
+        FP = e - tn_score
+
+        token_dict = {
+            "TP": TP,
+            "FN": FN,
+            "TN": tn_score,
+            "FP": FP,
+            "i": i,
+            "e": e,
+            "N": dataset_size,
+            "recall": recall,
+            "precision": TP / (TP + FP),
+            "accuracy": (TP + tn_score) / dataset_size,
+        }
+
+        rpn = to_rpn(equation_string)
+        rpn = replace_rpn_tokens_with_numbers(rpn, token_dict=token_dict)
+        score = evaluate_rpn(tokens=rpn)
+
+        token_dict["measure"] = score
+
+        df_3d = df_3d.append(
+            token_dict,
+            ignore_index=True,
+        )
 
 
-TN = np.array(range(e + 1))
-df = pd.DataFrame()
-for tn_score in TN:
-    tn_score = int(tn_score)
-    # TN = np.array(range(e + 1))
-    FP = e - tn_score
-
-    # create a dictionary of the confusion matrix terms
-    token_dict = {
-        "TP": TP,
-        "FN": FN,
-        "TN": tn_score,
-        "FP": FP,
-        "i": i,
-        "e": e,
-        "N": dataset_size,
-        "recall": recall,
-        "precision": TP / (TP + FP),
-        "accuracy": (TP + tn_score) / dataset_size,
-    }
-
-    rpn = to_rpn(equation_string)
-    # st.write(rpn)
-    rpn = replace_rpn_tokens_with_numbers(rpn, token_dict=token_dict)
-    # st.write(rpn)
-    score = evaluate_rpn(tokens=rpn)
-
-    # st.write(f"TN: {TN}, score: {score}")
-    token_dict["measure"] = score
-
-    df = df.append(
-        token_dict,
-        ignore_index=True,
-    )
-
-fig = px.line(
-    df,
+fig = px.scatter_3d(
+    df_3d,
     x="TN",
-    y="measure",
+    y="recall",
+    z="measure",
+    color="measure",
+    opacity=0.7,
     width=800,
-    height=450,
+    height=600,
 )
 fig.update_layout(
-    xaxis_title=r"TN",
-    yaxis_title=r"Evaluation measure score",
-    legend_title_text="Measures",
+    scene=dict(
+        xaxis_title="TN",
+        yaxis_title="recall",
+        zaxis_title="measure",
+    ),
 )
 st.plotly_chart(fig)
