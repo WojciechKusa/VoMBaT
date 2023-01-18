@@ -104,9 +104,14 @@ df = pd.DataFrame(metrics)
 df["Hours saved"] = assessments_per_document * df["TN"] * hours_per_document
 df["Cost saved"] = df["Hours saved"] * cost_per_hour
 
-st.metric(
+col1, col2 = st.columns(2)
+col1.metric(
     label="Cost of manually annotating the whole dataset",
     value=f"{cost_per_hour * hours_per_document * assessments_per_document * dataset_size :.0f} €",
+)
+col2.metric(
+    label="Time needed for manually annotating the whole dataset",
+    value=f"{hours_per_document * assessments_per_document * dataset_size :.0f} hours",
 )
 
 st.markdown("---")
