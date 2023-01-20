@@ -3,9 +3,71 @@ import json
 from typing import Tuple
 
 import numpy as np
+import streamlit as st
 
 with open("data/datasets.json", "r") as f:
     datasets = json.load(f)
+
+
+def draw_sidebar() -> tuple[int, int, int]:
+    """Draws the sidebar with the dataset selection: number of documents and number of includes.
+    Common across all pages.
+    :return: tuple: e, i, dataset_size
+     - number of excludes
+     - number of includes
+     - number of documents
+    """
+    st.sidebar.write("### Dataset parameters")
+
+    emp = st.sidebar.empty()
+    dataset_type = emp.selectbox(
+        label="Select a dataset type", options=datasets.keys(), key="dataset_picker"
+    )
+
+    if dataset_type == "Custom":
+        _dataset_size = st.session_state.dataset_size
+        _i_percentage = st.session_state.i_percentage
+        _i = int(_dataset_size * _i_percentage / 100)
+        _e = _dataset_size - _i
+    else:
+        _dataset_size, _i, _e, _i_percentage = get_dataset_parameters(
+            dataset_type=dataset_type
+        )
+
+    def check_dataset_size():
+        if _dataset_size != st.session_state.dataset_size:
+            st.session_state["dataset_picker"] = "Custom"
+
+    def check_i_percentage():
+        if _i_percentage != st.session_state.i_percentage:
+            st.session_state["dataset_picker"] = "Custom"
+
+    dataset_size = st.sidebar.slider(
+        "Dataset size",
+        100,
+        5000,
+        _dataset_size,
+        50,
+        key="dataset_size",
+        on_change=check_dataset_size,
+    )
+    i_percentage = st.sidebar.slider(
+        "Percentage of relevant documents (includes)",
+        1.0,
+        99.0,
+        _i_percentage,
+        1.0,
+        key="i_percentage",
+        on_change=check_i_percentage,
+    )
+
+    i = int(dataset_size * i_percentage / 100)
+    e = dataset_size - i
+    st.sidebar.write("Number of relevant documents (includes, $\mathcal{I}$): ", i)
+    st.sidebar.write("Number of non-relevant documents (excludes, $\mathcal{E}$): ", e)
+    st.sidebar.write("Total number of documents, $\mathcal{N}$: ", dataset_size)
+
+    return e, i, dataset_size
 
 
 def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
@@ -21,11 +83,13 @@ def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
 
 
 definitions = {
-    "E": r"\mathcal{E} &= FP + TN ",
     "I": r"\mathcal{I} &= TP + FN ",
+    "E": r"\mathcal{E} &= FP + TN ",
+    "N": r"\mathcal{N} &= \mathcal{I} + \mathcal{E} ",
     "TP": r"\text{TP@r\%} &= r \cdot \mathcal{I} ",
     "FN": r"\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} ",
     "WSS": r"WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) ",
+    "Precision": r"Precision@r\% &= \frac{TP}{TP+FP} ",
     "TNR": r"TNR@r\% = nWSS@r\% &= \frac{TN}{TN + FP} ",
     "reTNR": r"reTNR@r\% &= \begin{cases} TNR@r\%, & \text{if } \frac{FP@r\%}{\mathcal{E}} < r\% \\ FNR@r\%, & \text{otherwise} \end{cases} ",
     "nreTNR": r"nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} ",
@@ -33,8 +97,8 @@ definitions = {
     "F2_score": r"F_2@r\% &= \frac{5TP}{5TP + 4FN + FP} ",
     "F3_score": r"F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} ",
     "F05_score": r"F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} ",
-    "normalisedF_1": r"normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} ",
-    "normalisedF_B": r"normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} ",
+    "normalisedF1": r"normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} ",
+    "normalisedFB": r"normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} ",
     "PPV": r"PPV = Precision@r\% &= \frac{TP}{TP + FP} ",
     "FDR": r"FDR@r\% &= \frac{FP}{TP + FP} ",
     "NPV": r"NPV@r\% &= \frac{TN}{TN + FN} ",
