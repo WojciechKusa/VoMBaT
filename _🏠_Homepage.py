@@ -10,6 +10,7 @@ st.write(
     2. Comparison of evaluation measures for all recall levels [takes a while to load]
     3. Simulations of savings in time and money for different datasets depending on the model quality
     4. Simulations of manual and automatic assessments for different datasets depending on the model quality
+    5. Custom evaluation measures comparison
     
     TAR system can be constructed both as a classifier or as a ranker.
     In the case of a classifier, we first need to select a threshold for the probability of relevance for which \
