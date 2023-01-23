@@ -7,7 +7,7 @@ st.write(
     This app compares different evaluation measures for a Technology-Assisted Review (TAR) system.
     On the left, you can select four subpages:
     1. Comparison of evaluation measures for a fixed recall level
-    2. Comparison of evaluation measures for all recall levels [takes a while to load]
+    2. Comparison of evaluation measures for all recall levels 
     3. Simulations of savings in time and money for different datasets depending on the model quality
     4. Simulations of manual and automatic assessments for different datasets depending on the model quality
     5. Custom evaluation measures comparison

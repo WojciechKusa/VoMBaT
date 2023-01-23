@@ -105,7 +105,11 @@ definitions = {
     "FDR": r"FDR@r\% &= \frac{FP}{TP + FP} ",
     "NPV": r"NPV@r\% &= \frac{TN}{TN + FN} ",
     "FOR": r"FOR@r\% &= \frac{FN}{TN + FN} ",
+    "LR+": r"LR+@r\% &= \frac{TPR}{FPR}",
+    "LR-": r"LR-@r\% &= \frac{FNR}{TNR} ",
+    "DOR": r"DOR@r\% &= \frac{LR+@r\%}{LR-@r\%} ",
     "Accuracy": r"Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}",
+    "Balanced accuracy": r"BA &= \frac{TPR + TNR}{2} ",
 }
 measures_definition = r"\begin{align}"
 for definition in definitions.values():
@@ -122,6 +126,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     FP = e - TN
 
     FPR = FP / e
+    FNR = FN / i
     TNR = TN / e  # nWSS
     WSS = (TN + FN) / dataset_size - (1 - recall)
 
@@ -134,6 +139,11 @@ def calculate_metrics(i, e, recall, dataset_size):
 
     NPV = TN / (TN + FN)
     FOR = 1 - NPV
+
+    LRminus = FNR / TNR
+    LRplus = recall / FPR
+    DOR = LRplus / LRminus
+    balanced_accuracy = (recall + TNR) / 2
 
     normalisedF1 = ((recall + 1) * i * TN) / (e * (recall * i + i + FP))
     normalisedF3 = ((recall + 9) * i * TN) / (e * (recall * i + 9 * i + FP))
@@ -157,6 +167,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["TNR"] = TNR
     metrics["WSS"] = WSS
     metrics["Accuracy"] = accuracy
+    metrics["Balanced accuracy"] = balanced_accuracy
     metrics["Precision"] = precision
     metrics["F1_score"] = F1_score
     metrics["F05_score"] = F05_score
@@ -164,6 +175,9 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["FDR"] = FDR
     metrics["NPV"] = NPV
     metrics["FOR"] = FOR
+    metrics["LR-"] = LRminus
+    metrics["LR+"] = LRplus
+    metrics["DOR"] = DOR
     metrics["normalisedF1"] = normalisedF1
     metrics["normalisedF3"] = normalisedF3
     metrics["normalisedF05"] = normalisedF05
@@ -184,7 +198,11 @@ defined_metrics = [
     "FDR",
     "NPV",
     "FOR",
+    "LR-",
+    "LR+",
+    "DOR",
     "Accuracy",
+    "Balanced accuracy",
     "normalisedF1",
     "normalisedF3",
     "normalisedF05",
