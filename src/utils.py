@@ -98,6 +98,8 @@ definitions = {
     "F3_score": r"F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} ",
     "F05_score": r"F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} ",
     "normalisedF1": r"normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} ",
+    "normalisedF3": r"normalisedF_{3}@r\% &= \frac{(r + 9) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot ((r + 9 )\cdot \mathcal{I} + FP)} ",
+    "normalisedF05": r"normalisedF_{0.5}@r\% &= \frac{(r + 0.25) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot ((r + 0.25) \cdot \mathcal{I} + FP)} ",
     "normalisedFB": r"normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} ",
     "PPV": r"PPV = Precision@r\% &= \frac{TP}{TP + FP} ",
     "FDR": r"FDR@r\% &= \frac{FP}{TP + FP} ",
@@ -139,7 +141,6 @@ def calculate_metrics(i, e, recall, dataset_size):
 
     # reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
     reTNR = copy.deepcopy(TNR)
-    print(len(reTNR) - 1, reTNR[len(reTNR) - 1], WSS[len(reTNR) - 1])
     for _index_i in range(len(reTNR) - 1, -1, -1):
         if WSS[_index_i] > 0:
             continue
