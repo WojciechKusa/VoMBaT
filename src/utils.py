@@ -90,6 +90,8 @@ definitions = {
     "FN": r"\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} ",
     "WSS": r"WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) ",
     "Precision": r"Precision@r\% &= \frac{TP}{TP+FP} ",
+    "Prevalence": r"Prevalence@r\% &= \frac{\mathcal{I}}{\mathcal{N}} ",
+    "DFR": r"DFR@r\% &= \frac{Prevalence \cdot Recall}{Precision} ",
     "TNR": r"TNR@r\% = nWSS@r\% &= \frac{TN}{TN + FP} ",
     "reTNR": r"reTNR@r\% &= \begin{cases} TNR@r\%, & \text{if } \frac{FP@r\%}{\mathcal{E}} < r\% \\ FNR@r\%, & \text{otherwise} \end{cases} ",
     "nreTNR": r"nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} ",
@@ -98,12 +100,18 @@ definitions = {
     "F3_score": r"F_3@r\% &= \frac{10TP}{10TP + 9FP + FN} ",
     "F05_score": r"F_{0.5}@r\% &= \frac{1.25TP}{1.25TP + 0.25FP + FN} ",
     "normalisedF1": r"normalisedF_1@r\% &= \frac{(r + 1) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \mathcal{I} + FP)} ",
+    "normalisedF3": r"normalisedF_{3}@r\% &= \frac{(r + 9) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot ((r + 9 )\cdot \mathcal{I} + FP)} ",
+    "normalisedF05": r"normalisedF_{0.5}@r\% &= \frac{(r + 0.25) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot ((r + 0.25) \cdot \mathcal{I} + FP)} ",
     "normalisedFB": r"normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} ",
     "PPV": r"PPV = Precision@r\% &= \frac{TP}{TP + FP} ",
     "FDR": r"FDR@r\% &= \frac{FP}{TP + FP} ",
     "NPV": r"NPV@r\% &= \frac{TN}{TN + FN} ",
     "FOR": r"FOR@r\% &= \frac{FN}{TN + FN} ",
+    "LR+": r"LR+@r\% &= \frac{TPR}{FPR}",
+    "LR-": r"LR-@r\% &= \frac{FNR}{TNR} ",
+    "DOR": r"DOR@r\% &= \frac{LR+@r\%}{LR-@r\%} ",
     "Accuracy": r"Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}",
+    "Balanced accuracy": r"BA &= \frac{TPR + TNR}{2} ",
 }
 measures_definition = r"\begin{align}"
 for definition in definitions.values():
@@ -120,18 +128,28 @@ def calculate_metrics(i, e, recall, dataset_size):
     FP = e - TN
 
     FPR = FP / e
+    FNR = FN / i
     TNR = TN / e  # nWSS
     WSS = (TN + FN) / dataset_size - (1 - recall)
 
     accuracy = (TP + TN) / dataset_size
     precision = TP / (TP + FP)
+    prevalence = i / dataset_size
     F1_score = 2 * precision * recall / (precision + recall)
     F05_score = (1 + 0.5**2) * precision * recall / (0.5**2 * precision + recall)
     F3_score = 10 * precision * recall / (9 * precision + recall)
     FDR = 1 - precision
 
+    DFR = prevalence * recall / precision
+    # https://www.gibsondunn.com/wp-content/uploads/documents/publications/Evans-Metrics-that-Matter-Inside-Counsel-1.2015.pdf
+
     NPV = TN / (TN + FN)
     FOR = 1 - NPV
+
+    LRminus = FNR / TNR
+    LRplus = recall / FPR
+    DOR = LRplus / LRminus
+    balanced_accuracy = (recall + TNR) / 2
 
     normalisedF1 = ((recall + 1) * i * TN) / (e * (recall * i + i + FP))
     normalisedF3 = ((recall + 9) * i * TN) / (e * (recall * i + 9 * i + FP))
@@ -139,7 +157,6 @@ def calculate_metrics(i, e, recall, dataset_size):
 
     # reTNR -- like reLU but with TNR for scores==0 when random is better. also normalised
     reTNR = copy.deepcopy(TNR)
-    print(len(reTNR) - 1, reTNR[len(reTNR) - 1], WSS[len(reTNR) - 1])
     for _index_i in range(len(reTNR) - 1, -1, -1):
         if WSS[_index_i] > 0:
             continue
@@ -155,7 +172,10 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["FPR"] = FPR
     metrics["TNR"] = TNR
     metrics["WSS"] = WSS
+    metrics["Prevalence"] = prevalence
+    metrics["DFR"] = DFR
     metrics["Accuracy"] = accuracy
+    metrics["Balanced accuracy"] = balanced_accuracy
     metrics["Precision"] = precision
     metrics["F1_score"] = F1_score
     metrics["F05_score"] = F05_score
@@ -163,6 +183,9 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["FDR"] = FDR
     metrics["NPV"] = NPV
     metrics["FOR"] = FOR
+    metrics["LR-"] = LRminus
+    metrics["LR+"] = LRplus
+    metrics["DOR"] = DOR
     metrics["normalisedF1"] = normalisedF1
     metrics["normalisedF3"] = normalisedF3
     metrics["normalisedF05"] = normalisedF05
@@ -177,13 +200,19 @@ defined_metrics = [
     "TNR",
     "WSS",
     "Precision",
+    "Prevalence",
+    "DFR",
     "F1_score",
     "F05_score",
     "F3_score",
     "FDR",
     "NPV",
     "FOR",
+    "LR-",
+    "LR+",
+    "DOR",
     "Accuracy",
+    "Balanced accuracy",
     "normalisedF1",
     "normalisedF3",
     "normalisedF05",
