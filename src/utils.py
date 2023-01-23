@@ -90,6 +90,8 @@ definitions = {
     "FN": r"\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} ",
     "WSS": r"WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) ",
     "Precision": r"Precision@r\% &= \frac{TP}{TP+FP} ",
+    "Prevalence": r"Prevalence@r\% &= \frac{\mathcal{I}}{\mathcal{N}} ",
+    "DFR": r"DFR@r\% &= \frac{Prevalence \cdot Recall}{Precision} ",
     "TNR": r"TNR@r\% = nWSS@r\% &= \frac{TN}{TN + FP} ",
     "reTNR": r"reTNR@r\% &= \begin{cases} TNR@r\%, & \text{if } \frac{FP@r\%}{\mathcal{E}} < r\% \\ FNR@r\%, & \text{otherwise} \end{cases} ",
     "nreTNR": r"nreTNR &= \frac{reTNR - \min(reTNR)}{\max(reTNR) - \min(reTNR)} ",
@@ -132,10 +134,14 @@ def calculate_metrics(i, e, recall, dataset_size):
 
     accuracy = (TP + TN) / dataset_size
     precision = TP / (TP + FP)
+    prevalence = i / dataset_size
     F1_score = 2 * precision * recall / (precision + recall)
     F05_score = (1 + 0.5**2) * precision * recall / (0.5**2 * precision + recall)
     F3_score = 10 * precision * recall / (9 * precision + recall)
     FDR = 1 - precision
+
+    DFR = prevalence * recall / precision
+    # https://www.gibsondunn.com/wp-content/uploads/documents/publications/Evans-Metrics-that-Matter-Inside-Counsel-1.2015.pdf
 
     NPV = TN / (TN + FN)
     FOR = 1 - NPV
@@ -166,6 +172,8 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["FPR"] = FPR
     metrics["TNR"] = TNR
     metrics["WSS"] = WSS
+    metrics["Prevalence"] = prevalence
+    metrics["DFR"] = DFR
     metrics["Accuracy"] = accuracy
     metrics["Balanced accuracy"] = balanced_accuracy
     metrics["Precision"] = precision
@@ -192,6 +200,8 @@ defined_metrics = [
     "TNR",
     "WSS",
     "Precision",
+    "Prevalence",
+    "DFR",
     "F1_score",
     "F05_score",
     "F3_score",
