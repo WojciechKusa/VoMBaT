@@ -90,6 +90,7 @@ definitions = {
     "FN": r"\text{FN@r\%} &= (1 - r) \cdot \mathcal{I} ",
     "WSS": r"WSS@r\% &= \frac{TN + FN}{N} - \left(1 - r\right) ",
     "Precision": r"Precision@r\% &= \frac{TP}{TP+FP} ",
+    "normalisedPrecision": r"nPrecision@r\% &= \frac{TP \cdot TN}{\mathcal{E} \cdot (TP + FP)} ",
     "Prevalence": r"Prevalence@r\% &= \frac{\mathcal{I}}{\mathcal{N}} ",
     "DFR": r"DFR@r\% &= \frac{Prevalence \cdot Recall}{Precision} ",
     "TNR": r"TNR@r\% = nWSS@r\% &= \frac{TN}{TN + FP} ",
@@ -134,6 +135,7 @@ def calculate_metrics(i, e, recall, dataset_size):
 
     accuracy = (TP + TN) / dataset_size
     precision = TP / (TP + FP)
+    n_precision = (recall * i * TN) / (e * (TP + FP))
     prevalence = i / dataset_size
     F1_score = 2 * precision * recall / (precision + recall)
     F05_score = (1 + 0.5**2) * precision * recall / (0.5**2 * precision + recall)
@@ -177,6 +179,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["Accuracy"] = accuracy
     metrics["Balanced accuracy"] = balanced_accuracy
     metrics["Precision"] = precision
+    metrics["normalisedPrecision"] = n_precision
     metrics["F1_score"] = F1_score
     metrics["F05_score"] = F05_score
     metrics["F3_score"] = F3_score
@@ -200,6 +203,7 @@ defined_metrics = [
     "TNR",
     "WSS",
     "Precision",
+    "normalisedPrecision",
     "Prevalence",
     "DFR",
     "F1_score",
