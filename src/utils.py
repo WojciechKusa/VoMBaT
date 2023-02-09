@@ -104,15 +104,16 @@ definitions = {
     "normalisedF3": r"normalisedF_{3}@r\% &= \frac{(r + 9) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot ((r + 9 )\cdot \mathcal{I} + FP)} ",
     "normalisedF05": r"normalisedF_{0.5}@r\% &= \frac{(r + 0.25) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot ((r + 0.25) \cdot \mathcal{I} + FP)} ",
     "normalisedFB": r"normalisedF_{beta}@r\% &= \frac{(r + \beta^2) \cdot \mathcal{I} \cdot TN}{\mathcal{E} \cdot (r \cdot \mathcal{I}+ \beta^2 \cdot \mathcal{I} + FP)} ",
-    "PPV": r"PPV = Precision@r\% &= \frac{TP}{TP + FP} ",
+    "PPV": r"PPV@r\% = Precision@r\% &= \frac{TP}{TP + FP} ",
     "FDR": r"FDR@r\% &= \frac{FP}{TP + FP} ",
     "NPV": r"NPV@r\% &= \frac{TN}{TN + FN} ",
     "FOR": r"FOR@r\% &= \frac{FN}{TN + FN} ",
     "LR+": r"LR+@r\% &= \frac{TPR}{FPR}",
     "LR-": r"LR-@r\% &= \frac{FNR}{TNR} ",
     "DOR": r"DOR@r\% &= \frac{LR+@r\%}{LR-@r\%} ",
-    "Accuracy": r"Accuracy &= \frac{TP + TN}{TP + TN + FP + FN}",
-    "Balanced accuracy": r"BA &= \frac{TPR + TNR}{2} ",
+    "Accuracy": r"Accuracy@r\% &= \frac{TP + TN}{TP + TN + FP + FN}",
+    "Balanced accuracy": r"BA@r\% &= \frac{TPR + TNR}{2} ",
+    "MCC": r"MCC@r\% &= \frac{TP \cdot TN - FP \cdot FN}{\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN + FN)}} ",
 }
 measures_definition = r"\begin{align}"
 for definition in definitions.values():
@@ -141,6 +142,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     F05_score = (1 + 0.5**2) * precision * recall / (0.5**2 * precision + recall)
     F3_score = 10 * precision * recall / (9 * precision + recall)
     FDR = 1 - precision
+    MCC = (TP * TN - FP * FN) / np.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
 
     DFR = prevalence * recall / precision
     # https://www.gibsondunn.com/wp-content/uploads/documents/publications/Evans-Metrics-that-Matter-Inside-Counsel-1.2015.pdf
@@ -195,6 +197,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     metrics["reTNR"] = reTNR
     metrics["nreTNR"] = nreTNR
     metrics["recall"] = recall
+    metrics["MCC"] = MCC
 
     return metrics
 
@@ -215,6 +218,7 @@ defined_metrics = [
     "LR-",
     "LR+",
     "DOR",
+    "MCC",
     "Accuracy",
     "Balanced accuracy",
     "normalisedF1",
