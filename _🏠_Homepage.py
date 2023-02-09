@@ -30,6 +30,5 @@ st.write(
     Reducing workload in systematic review preparation using automated citation classification. \
     Journal of the American Medical Informatics Association, 13(2), 206-219.*
     
-    More information about the datasets can be found in the last section of the sidebar.
     """
 )

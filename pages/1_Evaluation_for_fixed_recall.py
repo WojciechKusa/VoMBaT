@@ -21,7 +21,7 @@ st.write(
     "You can see the definition of each measure below."
 )
 
-estimated_recall = st.slider("Estimated recall: ", 1, 100, 95, 1)
+estimated_recall = st.slider("Desired recall: ", 1, 100, 95, 1)
 estimated_recall /= 100
 
 metrics = calculate_metrics(
