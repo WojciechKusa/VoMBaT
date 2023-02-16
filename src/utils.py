@@ -65,7 +65,7 @@ def draw_sidebar() -> tuple[int, int, int]:
     e = dataset_size - i
     st.sidebar.write("Number of relevant documents (includes, $\mathcal{I}$): ", i)
     st.sidebar.write("Number of non-relevant documents (excludes, $\mathcal{E}$): ", e)
-    st.sidebar.write("Total number of documents, $\mathcal{N}$: ", dataset_size)
+    st.sidebar.write("Total number of documents, $N$: ", dataset_size)
 
     return e, i, dataset_size
 
