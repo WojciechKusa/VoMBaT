@@ -1,10 +1,10 @@
 import streamlit as st
 
-st.title("Comparison of evaluation measures for Technology-Assisted Reviews")
+st.title("Comparison of evaluation measures for High-Recall Search Tasks")
 
 st.write(
     """
-    This app compares different evaluation measures for a Technology-Assisted Review (TAR) system.
+    This app compares different evaluation measures for High-Recall Search Tasks.
     On the left, you can select four subpages:
     1. Comparison of evaluation measures for a fixed recall level
     2. Comparison of evaluation measures for all recall levels 
@@ -12,7 +12,11 @@ st.write(
     4. Simulations of manual and automatic assessments for different datasets depending on the model quality
     5. Custom evaluation measures comparison
     
-    TAR system can be constructed both as a classifier or as a ranker.
+    Examples of High-Recall Search Tasks are:
+    - citation screening for systematic literature reviews
+    - eDiscovery (electronic discovery) for legal cases 
+    
+    These systems can be constructed both as a classifier or as a ranker.
     In the case of a classifier, we first need to select a threshold for the probability of relevance for which \
     the model obtains a a fixed recall level.
     In the case of a ranker, we can directly select a fixed recall level.
