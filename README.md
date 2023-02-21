@@ -1,4 +1,4 @@
-# Dashboard for evaluation metrics for a fixed level of recall
+# VoMBaT - Visualisation of evaluation Measure Behaviour in Technology assisted reviews
 
 ## Installation
 
