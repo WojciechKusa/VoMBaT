@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -8,8 +10,13 @@ from src.utils import (
 )
 
 
-def to_rpn(expression):
-    """Operators and operands must be split by spaces."""
+def to_rpn(expression: str) -> list[str]:
+    """Converts an expression from infix notation to reverse polish notation.
+    Operators and operands must be split by spaces.
+
+    :param expression:
+    :return:
+    """
 
     operators_precedence = {"^": 4, "/": 3, "*": 3, "+": 2, "-": 2}
     operators_associativity = {
@@ -70,11 +77,14 @@ def to_rpn(expression):
     return output_queue
 
 
-def evaluate_rpn(tokens):
-    # Create a stack to store the operands
+def evaluate_rpn(tokens: list[Union[str, int, float]]) -> Union[int, float]:
+    """Evaluate a list of tokens in Reverse Polish Notation.
+
+    :param tokens: list of tokens in Reverse Polish Notation
+    :return:
+    """
     stack = []
 
-    # Iterate through the tokens
     for token in tokens:
         if isinstance(token, (int, float)):
             # If the token is a number, push it onto the stack
@@ -104,7 +114,12 @@ def evaluate_rpn(tokens):
 
 
 def replace_rpn_tokens_with_numbers(rpn: list[str], token_dict: dict) -> list:
-    # evaluate items in rpn and check if it is not an operator for its value in token_dict
+    """Evaluate items in Reverse Polish Notation and check if it is not an operator for its value in token_dict
+
+    :param rpn: list of tokens in Reverse Polish Notation
+    :param token_dict: dictionary with token names as keys and their values as values
+    :return: list of tokens in Reverse Polish Notation with numbers instead of tokens
+    """
     out_rpn = []
     for token in rpn:
         try:
@@ -119,11 +134,14 @@ def replace_rpn_tokens_with_numbers(rpn: list[str], token_dict: dict) -> list:
     return out_rpn
 
 
-def rpn_to_latex(tokens: list):
-    # Create a stack to store operands
+def rpn_to_latex(tokens: list) -> str:
+    """Converts a list of tokens in Reverse Polish Notation to a LaTeX string.
+
+    :param tokens: list of tokens in Reverse Polish Notation
+    :return:
+    """
     stack = []
 
-    # Iterate through the tokens
     for token in tokens:
         if token in ["+", "-", "*", "/", "^"]:
             if token == "+":
@@ -146,7 +164,6 @@ def rpn_to_latex(tokens: list):
                 operand2 = stack.pop()
                 operand1 = stack.pop()
                 result = f"{operand1} ^ {operand2}"
-            # Push the result onto the stack
             stack.append(result)
         else:
             stack.append(token)

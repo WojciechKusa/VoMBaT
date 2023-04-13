@@ -88,6 +88,9 @@ sampled_df = sampled_df[
     ]
 ]
 
+for col in options:
+    sampled_df[col] = sampled_df[col].apply(lambda x: f"{x:.3f}")
+
 hide_table_row_index = """
             <style>
             thead tr th:first-child {display:none}
