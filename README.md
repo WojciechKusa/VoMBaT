@@ -5,7 +5,7 @@
 Create and activate conda environment:
 
 ```bash
-$ conda create --name tar_metrics_demo python==3.10.6
+$ conda create --name tar_metrics_demo python==3.10.10
 $ conda activate tar_metrics_demo
 ```
 
