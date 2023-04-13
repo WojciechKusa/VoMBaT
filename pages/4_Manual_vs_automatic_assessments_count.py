@@ -4,27 +4,23 @@ import streamlit as st
 
 from src.utils import calculate_metrics, draw_sidebar
 
-time_per_document = 0.5  # seconds
-cost_per_hour = 30
-assessments_per_document = 2
-
 e, i, dataset_size = draw_sidebar()
 
 st.title("Manual / automatic assessments count")
 
 st.write(
-    """       
-        When one fixes the recall level, the number of relevant documents (includes) that would be screened 
-        manually and automatically is fixed. 
-        Relevant documents included automatically are equal to TP, whereas includes left for a manual review are equal 
-        to FN. 
-        The number of irrelevant documents (excludes) that would be screened manually and automatically depends on the
-        models quality (TNR). 
-        The higher the TNR score, the more irrelevant documents are excluded automatically (TN). 
+    """
+        When one fixes the recall level, the number of relevant documents (includes) that would be screened \
+        manually and automatically is fixed. \
+        Relevant documents included automatically are equal to TP, whereas includes left for a manual review are equal \
+        to FN. \
+        The number of irrelevant documents (excludes) that would be screened manually and automatically depends on the \
+        models quality (TNR). \
+        The higher the TNR score, the more irrelevant documents are excluded automatically (TN). \
         The remaining irrelevant documents need to be reviewed manually (FP).
-         
-        This page displays the expected number of documents that would be screened manually 
-        and automatically, assuming one wants to achieve a specific recall level.
+
+        This page displays the expected number of documents that would be screened manually \
+        and automatically, assuming one wants to achieve a specific recall level. \
         Values are presented as stacked barplots for eleven different values of TNR.
     """
 )

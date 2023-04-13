@@ -1,6 +1,8 @@
 import streamlit as st
 
-st.title("VoMBaT🐻 - Visualisation of Evaluation Measure Behaviour for High-Recall Search Tasks")
+st.title(
+    "VoMBaT🐻 - Visualisation of Evaluation Measure Behaviour for High-Recall Search Tasks"
+)
 
 st.write(
     """

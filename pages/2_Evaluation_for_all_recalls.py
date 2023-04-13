@@ -33,7 +33,7 @@ options = st.multiselect(
 columns = [x[1] for x in options]  # todo ????
 
 st.write(
-    f"### Evaluation measure scores depending on the number of True Negatives (TNs) and estimated recall levels"
+    "### Evaluation measure scores depending on the number of True Negatives (TNs) and estimated recall levels"
 )
 
 df_3d = pd.DataFrame()
@@ -44,10 +44,8 @@ for recall in all_recalls:
     FN = (1 - recall) * i
     metrics = calculate_metrics(dataset_size=dataset_size, e=e, i=i, recall=recall)
 
-    df_3d = df_3d.append(
-        pd.DataFrame(metrics),
-        ignore_index=True,
-    )
+    df_3d = pd.concat([df_3d, pd.DataFrame(metrics)], ignore_index=True)
+
 
 for measure in options:
     st.latex(r"\begin{align*} " + "\n" + definitions[measure] + "\n" + r"\end{align*}")

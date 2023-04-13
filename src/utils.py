@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Tuple
+from typing import Union
 
 import numpy as np
 import streamlit as st
@@ -70,7 +70,12 @@ def draw_sidebar() -> tuple[int, int, int]:
     return e, i, dataset_size
 
 
-def get_dataset_parameters(dataset_type: str) -> Tuple[int, int, int, int]:
+def get_dataset_parameters(dataset_type: str) -> tuple[int, int, int, int]:
+    """Returns the dataset parameters for a given dataset type.
+
+    :param dataset_type: One of the predefined datasets parameters.
+    :return:
+    """
     i_percentage = (
         100 * datasets[dataset_type]["includes"] / datasets[dataset_type]["size"]
     )
@@ -121,7 +126,17 @@ for definition in definitions.values():
 measures_definition += r"\end{align}"
 
 
-def calculate_metrics(i, e, recall, dataset_size):
+def calculate_metrics(
+    i: int, e: int, recall: float, dataset_size: int
+) -> dict[str, Union[np.ndarray, int]]:
+    """This function calculates the metrics for a given recall and dataset size.
+
+    :param i: number of relevant documents (includes) in the dataset
+    :param e: number of non-relevant documents (excludes) in the dataset
+    :param recall: recall percentage (0.0, 1.0]
+    :param dataset_size: size of the dataset
+    :return:
+    """
     metrics = {}
     FN = int(i * (1 - recall))
     TP = i - FN
@@ -202,7 +217,7 @@ def calculate_metrics(i, e, recall, dataset_size):
     return metrics
 
 
-defined_metrics = [
+defined_metrics: list[str] = [
     "TNR",
     "WSS",
     "Precision",
