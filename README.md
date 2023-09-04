@@ -1,4 +1,12 @@
-# VoMBaT: Visualisation of evaluation Measure Behaviour in Technology assisted reviews
+# VoMBaT: Visualisation of Evaluation Measure Behaviour in Technology Assisted Reviews
+
+This package serves as basis for the paper: _"VoMBaT: A Tool for Visualising Evaluation Measure Behaviour in High-Recall Search Tasks"_ by Wojciech Kusa, Aldo Lipani, Petr Knoth, Allan Hanbury
+
+[![DOI:10.1145/3539618.3591802](http://img.shields.io/badge/SIGIR_2023-https://doi.org/10.1145/3539618.3591802-1F7CFA.svg)](https://doi.org/10.1145/3539618.3591802) 
+
+
+High-Recall Information Retrieval (HRIR) tasks, such as Technology-Assisted Review (TAR) used in legal eDiscovery and systematic literature reviews, focus on maximising the retrieval of relevant documents 🔎📑. Traditional evaluation measures consider precision or work saved at fixed recall levels, which can sometimes misrepresent actual system performance, especially when estimating potential savings in time and cost ⏳💰. Introducing **VoMBaT** – a visual analytics tool 🖥️ designed to explore the interplay between evaluation measures and varying recall levels. Our open-source tool provides insights into 18 different evaluation measures, both general and TAR-specific, letting you contrast, compare, and simulate savings in both time and money 🕵️‍📈️️️. Explore the metrics and their potential impacts on your HRIR tasks [here](https://vombat.streamlit.app).
+
 
 ## Installation
 
