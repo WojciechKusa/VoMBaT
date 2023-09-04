@@ -35,3 +35,21 @@ Start Streamlit server:
 ```
 
 You can now access the app at http://localhost:8501
+
+## Citing
+
+
+If you find our tool useful, please cite our paper:
+
+```bibtex
+@inproceedings{Kusa2023Vombat,
+title = {VoMBaT: A Tool for Visualising Evaluation Measure Behaviour in High-Recall Search Tasks},
+booktitle={Proceedings of the 46th International ACM SIGIR Conference on Research and Development in Information Retrieval},
+pages={3105--3109},
+year = {2023},
+doi = {https://doi.org/10.1145/3539618.3591802},
+url = {https://dl.acm.org/doi/abs/10.1145/3539618.3591802},
+author = {Kusa, Wojciech and Lipani, Aldo and Knoth, Petr and Hanbury, Allan}
+}
+```
+
