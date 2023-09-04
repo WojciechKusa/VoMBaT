@@ -41,5 +41,14 @@ st.write(
     Reducing workload in systematic review preparation using automated citation classification. \
     Journal of the American Medical Informatics Association, 13(2), 206-219.*
     
+    ________
+    
+    If you found this tool useful, please cite our paper:
+    
+    *Kusa, W., Lipani, A., Knoth, P., & Hanbury, A. (2023, July). VoMBaT: A Tool for Visualising Evaluation Measure \
+    Behaviour in High-Recall Search Tasks. In Proceedings of the 46th International ACM SIGIR Conference on Research \
+    and Development in Information Retrieval (pp. 3105-3109).*
+
+    
     """
 )
